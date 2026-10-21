@@ -19,6 +19,7 @@ struct FluidMechLabApp: App {
     }
 }
 
+@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillFinishLaunching(_ notification: Notification) {
         // Lets `swift run` from Terminal behave like a normal app with a Dock icon and menu bar.
@@ -27,5 +28,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApplication.shared.activate(ignoringOtherApps: true)
+        SnapshotRunner.prepareLaunch()
     }
 }

@@ -61,6 +61,22 @@ enum SnapshotRunner {
         NSApplication.shared.terminate(nil)
     }
 
+    /// In snapshot mode, makes sure a document window exists even if the system showed an Open panel at launch.
+    static func prepareLaunch() {
+        guard let path = ProcessInfo.processInfo.environment["FMLAB_SNAPSHOT_DIR"] else { return }
+        let dir = URL(fileURLWithPath: path, isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        log(dir, "launched")
+        Task { @MainActor in
+            await pause(6)
+            guard !hasRun else { return }
+            let titles = NSApplication.shared.windows.map { "\($0.className) visible=\($0.isVisible) title=\($0.title)" }
+            log(dir, "no study window after 6 s; windows: \(titles.joined(separator: "; ")). Creating a new document.")
+            for window in NSApplication.shared.windows where window is NSPanel { window.close() }
+            NSDocumentController.shared.newDocument(nil)
+        }
+    }
+
     private static func pause(_ seconds: Double) async {
         try? await Task.sleep(for: .seconds(seconds))
     }
@@ -83,6 +99,8 @@ enum SnapshotRunner {
     }
 
     private static func log(_ dir: URL, _ message: String) {
-        try? message.write(to: dir.appendingPathComponent("snapshot-log.txt"), atomically: true, encoding: .utf8)
+        let url = dir.appendingPathComponent("snapshot-log.txt")
+        let previous = (try? String(contentsOf: url, encoding: .utf8)) ?? ""
+        try? (previous + "\(Date()): \(message)\n").write(to: url, atomically: true, encoding: .utf8)
     }
 }
