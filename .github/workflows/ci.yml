@@ -16,3 +16,36 @@ jobs:
         run: swift build -c release
       - name: Run physics tests
         run: swift test
+
+  app-and-screenshots:
+    runs-on: macos-15
+    needs: build-and-test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Fluid MechLab.app
+        run: scripts/build-app.sh
+      - name: Render screenshots of every screen
+        run: |
+          mkdir -p build/screenshots
+          FMLAB_SNAPSHOT_DIR="$PWD/build/screenshots" \
+          FMLAB_SNAPSHOT_PRESET="Deepwater Turbidite Sandstone" \
+            "build/Fluid MechLab.app/Contents/MacOS/FluidMechLab" &
+          APP_PID=$!
+          # Give the app up to 3 minutes, then stop it.
+          for i in $(seq 1 180); do
+            if ! kill -0 $APP_PID 2>/dev/null; then break; fi
+            if [ "$i" = 40 ]; then screencapture -x build/screenshots/full-screen.png || true; fi
+            sleep 1
+          done
+          kill $APP_PID 2>/dev/null || true
+          ls -la build/screenshots
+      - name: Zip app
+        run: ditto -c -k --keepParent "build/Fluid MechLab.app" "build/FluidMechLab.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: build/screenshots
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FluidMechLab-app
+          path: build/FluidMechLab.zip
