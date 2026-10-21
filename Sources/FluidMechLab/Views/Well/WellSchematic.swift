@@ -55,7 +55,7 @@ struct WellSchematic: View {
         drawDots(&context, in: resRect)
         context.draw(
             Text("Reservoir").font(.caption2.weight(.semibold)).foregroundColor(.brown),
-            at: CGPoint(x: size.width - 8, y: resRect.minY + 2), anchor: .topTrailing)
+            at: CGPoint(x: 56, y: resRect.minY - 2), anchor: .bottomLeading)
 
         // Damaged zone around the perforations, width ∝ invasion depth (exaggerated).
         if let damage, let perfTop = well.perforations.map(\.top).min(), let perfBottom = well.perforations.map(\.bottom).max() {
@@ -174,8 +174,12 @@ struct WellSchematic: View {
             x.move(to: CGPoint(x: r.maxX, y: r.minY)); x.addLine(to: CGPoint(x: r.minX, y: r.maxY))
             context.stroke(x, with: .color(colorScheme == .dark ? .black : .white), lineWidth: 1)
         }
+        var packerLeader = Path()
+        packerLeader.move(to: CGPoint(x: layout.centreX - innermostHalf - 4, y: packerY))
+        packerLeader.addLine(to: CGPoint(x: 60, y: packerY))
+        context.stroke(packerLeader, with: .color(.secondary.opacity(0.6)), style: StrokeStyle(lineWidth: 0.5, dash: [2, 2]))
         context.draw(Text("Packer").font(.caption2).foregroundColor(.secondary),
-                     at: CGPoint(x: layout.centreX - layout.maxHalfWidth - 8, y: packerY), anchor: .trailing)
+                     at: CGPoint(x: 58, y: packerY - 2), anchor: .bottomLeading)
 
         // Wellhead.
         let headRect = CGRect(x: layout.centreX - halfWidth(rank: 1) - 6, y: layout.top - 18, width: 2 * (halfWidth(rank: 1) + 6), height: 14)

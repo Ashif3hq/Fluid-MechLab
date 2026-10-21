@@ -61,15 +61,21 @@ struct WellArchitectureView: View {
         VStack(alignment: .leading, spacing: 10) {
             Table(study.well.casings, selection: $selectedCasing) {
                 TableColumn("String") { c in Text(c.name).fontWeight(c.id == selectedCasing ? .semibold : .regular) }
+                    .width(min: 80, ideal: 100)
                 TableColumn("OD") { c in Text(pipeSizeLabel(c.outerDiameter)).monospacedDigit() }
-                    .width(60)
-                TableColumn("ID") { c in Text(Quantity.diameter.format(c.innerDiameter, digits: 3, in: units)).monospacedDigit() }
-                    .width(80)
+                    .width(44)
+                TableColumn("ID (\(Quantity.diameter.symbol(units)))") { c in
+                    Text(Quantity.diameter.display(c.innerDiameter, in: units).formatted(digits: units == .si ? 1 : 3)).monospacedDigit()
+                }
+                .width(62)
                 TableColumn("Hole") { c in Text(pipeSizeLabel(c.holeSize)).monospacedDigit() }
-                    .width(60)
-                TableColumn("Top") { c in Text(Quantity.depth.format(c.top, digits: 0, in: units)).monospacedDigit() }
-                TableColumn("Shoe") { c in Text(Quantity.depth.format(c.shoe, digits: 0, in: units)).monospacedDigit() }
-                TableColumn("Cement top") { c in Text(Quantity.depth.format(c.topOfCement, digits: 0, in: units)).monospacedDigit() }
+                    .width(44)
+                TableColumn("Top (\(Quantity.depth.symbol(units)))") { c in depthText(c.top) }
+                    .width(min: 56, ideal: 64)
+                TableColumn("Shoe (\(Quantity.depth.symbol(units)))") { c in depthText(c.shoe) }
+                    .width(min: 56, ideal: 64)
+                TableColumn("TOC (\(Quantity.depth.symbol(units)))") { c in depthText(c.topOfCement) }
+                    .width(min: 56, ideal: 64)
             }
             .frame(minHeight: 150, maxHeight: 220)
 
@@ -102,6 +108,10 @@ struct WellArchitectureView: View {
                 }
             }
         }
+    }
+
+    private func depthText(_ md: Double) -> some View {
+        Text(Quantity.depth.display(md, in: units).formatted(digits: 0)).monospacedDigit()
     }
 
     private func addCasing() {

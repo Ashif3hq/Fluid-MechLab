@@ -6,7 +6,7 @@ import SwiftUI
 /// Options for the 3D model.
 struct Scene3DOptions: Equatable {
     /// Radial exaggeration so pipe and damage radii are visible against depth.
-    var radialExaggeration: Double = 60
+    var radialExaggeration: Double = 150
     var showStrata = true
     var showCasing = true
     var showDamage = true
@@ -23,7 +23,11 @@ struct Well3DView: NSViewRepresentable {
         view.allowsCameraControl = true
         view.autoenablesDefaultLighting = false
         view.antialiasingMode = .multisampling4X
-        view.backgroundColor = .clear
+        view.backgroundColor = NSColor(name: nil) { appearance in
+            appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+                ? NSColor(calibratedRed: 0.11, green: 0.13, blue: 0.16, alpha: 1)
+                : NSColor(calibratedRed: 0.86, green: 0.90, blue: 0.94, alpha: 1)
+        }
         view.defaultCameraController.interactionMode = .orbitTurntable
         view.defaultCameraController.inertiaEnabled = true
         Well3DSnapshotRegistry.shared.view = view
@@ -136,16 +140,16 @@ struct WellSceneBuilder {
             for (i, top) in tops.enumerated() {
                 let bottom = i + 1 < tops.count ? tops[i + 1] : well.reservoirTop
                 addLayer(root, top: top, bottom: bottom, halfWidth: halfWidth, x: centreX, z: centreZ,
-                         color: palette[i % palette.count].withAlphaComponent(0.10))
+                         color: palette[i % palette.count].withAlphaComponent(0.22))
             }
         }
 
         // Reservoir slab.
         addLayer(root, top: well.reservoirTop, bottom: well.reservoirBottom, halfWidth: halfWidth, x: centreX, z: centreZ,
-                 color: NSColor(calibratedRed: 0.95, green: 0.76, blue: 0.30, alpha: 0.45))
+                 color: NSColor(calibratedRed: 0.95, green: 0.76, blue: 0.30, alpha: 0.5))
         // Underburden.
         addLayer(root, top: well.reservoirBottom, bottom: max(tdTVD, well.reservoirBottom) + 300, halfWidth: halfWidth, x: centreX, z: centreZ,
-                 color: NSColor(calibratedRed: 0.55, green: 0.52, blue: 0.50, alpha: 0.12))
+                 color: NSColor(calibratedRed: 0.55, green: 0.52, blue: 0.50, alpha: 0.25))
 
         // Open hole along the full path.
         let holeColor = NSColor(calibratedRed: 0.35, green: 0.25, blue: 0.18, alpha: 0.9)
@@ -199,7 +203,7 @@ struct WellSceneBuilder {
         camera.camera?.fieldOfView = 40
         let span = CGFloat(max(tdTVD, maxDisp) / unit)
         let target = SCNVector3(centreX, CGFloat(-tdTVD / unit) * 0.55, centreZ)
-        camera.position = SCNVector3(target.x + span * 1.05, target.y + span * 0.35, target.z + span * 1.05)
+        camera.position = SCNVector3(target.x + span * 1.4, target.y + span * 0.45, target.z + span * 1.4)
         camera.look(at: target)
         root.addChildNode(camera)
 
@@ -284,15 +288,12 @@ struct WellSceneBuilder {
 struct Model3DPane: View {
     let study: StudyCase
     @Environment(SimulationModel.self) private var sim
-    @AppStorage("radialExaggeration") private var exaggeration = 60.0
+    @AppStorage("radialExaggeration") private var exaggeration = 150.0
     @State private var options = Scene3DOptions()
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
             Well3DView(well: study.well, damage: sim.damage, options: resolvedOptions)
-                .background(
-                    LinearGradient(colors: [Color(nsColor: .windowBackgroundColor), Color(red: 0.55, green: 0.68, blue: 0.82).opacity(0.35)],
-                                   startPoint: .bottom, endPoint: .top))
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("View").font(.headline)
@@ -301,10 +302,11 @@ struct Model3DPane: View {
                 Toggle("Damaged zone", isOn: $options.showDamage)
                 Divider()
                 Text("Radial exaggeration ×\(Int(exaggeration))").font(.caption)
-                Slider(value: $exaggeration, in: 5...200).controlSize(.small).frame(width: 180)
+                Slider(value: $exaggeration, in: 20...400).controlSize(.small)
                 Text("Drag to orbit, scroll or pinch to zoom.").font(.caption2).foregroundStyle(.secondary)
             }
             .toggleStyle(.checkbox)
+            .frame(width: 200, alignment: .leading)
             .padding(12)
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             .padding(16)

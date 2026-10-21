@@ -35,16 +35,16 @@ private struct GeneralSettings: View {
 }
 
 private struct DisplaySettings: View {
-    @AppStorage("radialExaggeration") private var exaggeration = 60.0
+    @AppStorage("radialExaggeration") private var exaggeration = 150.0
 
     var body: some View {
         Form {
-            Slider(value: $exaggeration, in: 5...200) {
+            Slider(value: $exaggeration, in: 20...400) {
                 Text("Radial exaggeration:")
             } minimumValueLabel: {
-                Text("×5")
+                Text("×20")
             } maximumValueLabel: {
-                Text("×200")
+                Text("×400")
             }
             Text("Pipe and damage radii are enlarged so they are visible against thousands of feet of depth.")
                 .font(.caption)

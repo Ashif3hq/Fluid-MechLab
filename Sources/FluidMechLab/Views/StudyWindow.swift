@@ -26,7 +26,7 @@ struct StudyWindow: View {
         .navigationSubtitle(current.title)
         .inspector(isPresented: $showInspector) {
             InspectorView(section: current, study: $document.study)
-                .inspectorColumnWidth(min: 300, ideal: 350, max: 460)
+                .inspectorColumnWidth(min: 320, ideal: 380, max: 480)
         }
         .toolbar { toolbarContent }
         .environment(\.unitSystem, unitSystem)

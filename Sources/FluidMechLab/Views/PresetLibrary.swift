@@ -79,13 +79,13 @@ private struct PresetCard: View {
                     .foregroundStyle(.white)
                     .shadow(radius: 2)
             }
-            .frame(height: 78)
+            .frame(height: 64)
             Text(preset.name).font(.headline).lineLimit(2)
             Text(preset.summary).font(.caption).foregroundStyle(.secondary).lineLimit(4)
             Spacer(minLength: 0)
         }
         .padding(10)
-        .frame(height: 210, alignment: .top)
+        .frame(height: 190, alignment: .top)
         .background(.background, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -95,13 +95,40 @@ private struct PresetCard: View {
     }
 
     private var symbol: String {
-        switch preset.category {
+        if let specific = Self.symbols[preset.name] { return specific }
+        return switch preset.category {
         case .field: "globe.europe.africa.fill"
         case .damage: "circle.dashed.inset.filled"
         case .mud: "drop.circle.fill"
         case .rock: "square.stack.3d.down.forward.fill"
         }
     }
+
+    private static let symbols: [String: String] = [
+        "Giant Carbonate, Light Oil": "sun.max.fill",
+        "Deepwater Turbidite Sandstone": "water.waves",
+        "North Sea Sandstone": "wind",
+        "Mature Onshore Waterflood": "drop.triangle.fill",
+        "Heavy Oil Sand": "thermometer.sun.fill",
+        "Tight Sandstone": "square.grid.3x3.fill",
+        "HPHT Deep Reservoir": "flame.fill",
+        "Fines Plugging During Spurt": "aqi.medium",
+        "Clay Swelling by Fresh-Water Filtrate": "humidity.fill",
+        "Water Block in Tight Sand": "drop.degreesign.fill",
+        "Optimised Drill-In Fluid": "checkmark.seal.fill",
+        "High-Overbalance HPHT Exposure": "gauge.with.dots.needle.100percent",
+        "Long Static Exposure (Rig Downtime)": "clock.fill",
+        "Bentonite Water-Based Mud": "drop.fill",
+        "Polymer WBM (XC/PAC)": "link",
+        "Oil-Based Mud (Invert Emulsion)": "drop.halffull",
+        "Reservoir Drill-In Fluid (Sized CaCO₃)": "circle.grid.cross.fill",
+        "Fresh-Water Mud, Poor Fluid-Loss Control": "exclamationmark.triangle.fill",
+        "Clean Sandstone (Berea-Type)": "circle.hexagongrid.fill",
+        "Clay-Rich Sandstone": "square.3.layers.3d.down.right",
+        "Tight Gas Sandstone": "circle.dotted",
+        "Vuggy Carbonate": "bubbles.and.sparkles.fill",
+        "Chalk": "cube.fill",
+    ]
 
     private var gradient: LinearGradient {
         let colors: [Color]

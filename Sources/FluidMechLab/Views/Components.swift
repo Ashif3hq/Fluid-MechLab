@@ -47,17 +47,18 @@ struct ParameterRow: View {
             HStack(spacing: 6) {
                 Text(title)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                     .truncationMode(.tail)
                 Spacer(minLength: 4)
                 TextField(title, value: displayValue, format: .number.precision(.fractionLength(quantity.digits(digits, in: units))))
                     .labelsHidden()
                     .multilineTextAlignment(.trailing)
                     .monospacedDigit()
-                    .frame(width: 78)
+                    .frame(width: 72)
                 Text(quantity.symbol(units))
                     .foregroundStyle(.secondary)
                     .font(.caption)
-                    .frame(width: 50, alignment: .leading)
+                    .frame(width: 46, alignment: .leading)
             }
             if showSliders {
                 Slider(value: sliderValue, in: sliderRange)

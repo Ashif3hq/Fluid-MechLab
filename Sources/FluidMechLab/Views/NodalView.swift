@@ -34,6 +34,13 @@ private struct NodalResults: View {
         study.reservoir.skin + (study.includeDamageSkin ? (damageSkin ?? 0) : 0)
     }
 
+    /// Keeps the operating point in view: the VLP climbs steeply towards the AOF and would flatten everything else.
+    private var rateAxisMax: Double {
+        let aof = result.absoluteOpenFlow
+        guard let rate = result.operatingPoint?.rate else { return aof }
+        return min(aof, max(rate * 2.5, aof * 0.2))
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             StatGrid {
@@ -72,7 +79,9 @@ private struct NodalResults: View {
                     } ?? "",
                     bubblePoint: Quantity.pressure.display(result.bubblePoint, in: units),
                     xLabel: Quantity.liquidRate.axisLabel("Liquid rate", in: units),
-                    yLabel: Quantity.pressure.axisLabel("Bottomhole pressure", in: units))
+                    yLabel: Quantity.pressure.axisLabel("Bottomhole pressure", in: units),
+                    xMax: Quantity.liquidRate.display(rateAxisMax, in: units),
+                    yMax: Quantity.pressure.display(study.reservoir.pressure * 1.15, in: units))
                     .frame(height: 340)
             }
 
@@ -152,6 +161,8 @@ private struct NodalChart: View {
     let bubblePoint: Double
     let xLabel: String
     let yLabel: String
+    let xMax: Double
+    let yMax: Double
 
     var body: some View {
         Chart {
@@ -193,6 +204,9 @@ private struct NodalChart: View {
                 }
         }
         .chartForegroundStyleScale(["Inflow (IPR)": Color.green, "Outflow (VLP)": Color.blue, "Reference": Color.gray])
+        .chartXScale(domain: 0...max(xMax, 1))
+        .chartYScale(domain: 0...max(yMax, 1))
+        .chartPlotStyle { $0.clipped() }
         .chartXAxisLabel(xLabel)
         .chartYAxisLabel(yLabel)
     }
