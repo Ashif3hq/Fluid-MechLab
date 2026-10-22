@@ -24,6 +24,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillFinishLaunching(_ notification: Notification) {
         // Lets `swift run` from Terminal behave like a normal app with a Dock icon and menu bar.
         NSApplication.shared.setActivationPolicy(.regular)
+        // Open a new study at launch instead of the document browser.
+        UserDefaults.standard.register(defaults: ["NSShowAppCentricOpenPanelInsteadOfUntitledFile": false])
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
