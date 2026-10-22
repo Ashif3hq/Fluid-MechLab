@@ -69,6 +69,23 @@ The productivity ratio is PR = (ln(re/rw) − 0.75) / (ln(re/rw) − 0.75 + S).
 
 **Calibration.** λ0, β, σmax and F are rock-and-mud specific. They should be fitted to laboratory coreflood tests (dynamic filtration cell plus return-permeability measurement) for the formation being studied.
 
+## Live 2D invasion on the GPU (`LiveInvasion.swift`, `FlowGPU`)
+
+The Live Flow screen solves the same physics as the 1D damage model, on a horizontal slice of rock around the borehole, so that permeability heterogeneity and uneven invasion can be seen as they develop.
+
+- **Grid.** A square grid (128² to 512²) covering the rock out to about 1.4 times the 1D invasion depth. Cells inside the bit radius hold mud; cells outside the disc are at pore pressure.
+- **Rock.** Log-normal permeability k₀(x) = k̄ exp(σ g(x) − σ²/2), where g is a Gaussian random field made from 48 random Fourier modes with a set correlation length. σ is the Heterogeneity slider; σ = 0 gives a uniform rock.
+- **Pressure.** ∇·(k∇p) = 0 by red-black successive over-relaxation (ω = 1.85), warm-started every frame. Face conductances use the harmonic mean of the two cells. Each borehole face adds the cake resistance h/k_c. Each outer face adds the resistance of the ring out to the 1D model radius, so total rates match the 1D model. Borehole and outer faces are scaled by π/4 to correct for the staircase outline of a circle drawn in square cells.
+- **Transport.** Explicit first-order upwind, with substeps limited to 0.2 of the CFL limit:
+  - filtrate saturation: φΔS ∂s/∂t + ∇·(u s) = 0
+  - fines: φ ∂c/∂t + ∇·(u c) = −λ|u|c and ∂σ/∂t = λ|u|c
+  - cake growth on each wall cell: dh/dt = α uₙ (1 − h/h_eq)
+  - permeability: k = k₀ (1 − (1 − F)s)/(1 + βσ)
+- **GPU.** Every step is a Metal compute kernel: mobility, pressure (one pass per colour), velocity, transport (ping-pong buffers) and tracer particles. The buffers use shared storage, so on Apple Silicon the CPU reads the statistics straight from unified memory. `LiveInvasionSolver` is a CPU copy of the same steps. Tests check it against the 1D model for a uniform rock, and check that the GPU reproduces it.
+- **Tracers.** These are particles carried by the Darcy velocity. Their screen speed is scaled to the fastest cell, so they show direction and relative speed rather than true displacement.
+
+The live model is for insight. The 1D model remains the quantitative reference, and the live view draws its filtrate front as a dashed ring for comparison.
+
 ### References
 
 - Bedrikovetsky, P. et al. (2001). Characterisation of deep bed filtration system from laboratory pressure drop measurements. *J. Pet. Sci. Eng.* 32, 167–177.

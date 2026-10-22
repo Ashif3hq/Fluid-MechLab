@@ -51,6 +51,9 @@ struct StudyWindow: View {
         .fileExporter(isPresented: $isExporting, document: exportDocument, contentType: .commaSeparatedText,
                       defaultFilename: "\(document.study.title) – \(current.title).csv") { _ in }
         .focusedSceneValue(\.studyActions, actions)
+        .onChange(of: section) { old, new in
+            SnapshotRunner.note("section changed \(old.map(\.rawValue) ?? "nil") -> \(new.map(\.rawValue) ?? "nil")")
+        }
     }
 
     // MARK: Sidebar
@@ -59,13 +62,15 @@ struct StudyWindow: View {
         List(selection: $section) {
             Section("Model") {
                 ForEach(StudySection.modelSections) { s in
-                    NavigationLink(value: s) { Label(s.title, systemImage: s.systemImage) }
+                    Label(s.title, systemImage: s.systemImage)
+                        .tag(s)
                 }
             }
             Section("Simulation") {
                 ForEach(StudySection.simulationSections) { s in
-                    NavigationLink(value: s) { Label(s.title, systemImage: s.systemImage) }
+                    Label(s.title, systemImage: s.systemImage)
                         .badge(badge(for: s))
+                        .tag(s)
                 }
             }
         }
@@ -109,6 +114,8 @@ struct StudyWindow: View {
             PVTView(study: document.study)
         case .damage:
             FormationDamageView(study: document.study)
+        case .liveFlow:
+            LiveFlowView(study: document.study)
         case .nodal:
             NodalView(study: document.study)
         case .sensitivity:

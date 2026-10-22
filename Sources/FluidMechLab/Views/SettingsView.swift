@@ -9,6 +9,8 @@ struct SettingsView: View {
                 .tabItem { Label("General", systemImage: "gearshape") }
             DisplaySettings()
                 .tabItem { Label("3D Model", systemImage: "cube.transparent") }
+            LiveFlowSettings()
+                .tabItem { Label("Live Flow", systemImage: "play.circle") }
         }
         .frame(width: 460)
         .padding(20)
@@ -47,6 +49,24 @@ private struct DisplaySettings: View {
                 Text("×400")
             }
             Text("Pipe and damage radii are enlarged so they are visible against thousands of feet of depth.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
+private struct LiveFlowSettings: View {
+    @AppStorage("liveResolution") private var resolution = 256
+
+    var body: some View {
+        Form {
+            Picker("Grid resolution:", selection: $resolution) {
+                Text("128 × 128 (fast)").tag(128)
+                Text("256 × 256 (default)").tag(256)
+                Text("512 × 512 (detailed)").tag(512)
+            }
+            .pickerStyle(.radioGroup)
+            Text("The live simulation runs on the GPU with Metal. Apple Silicon Macs handle 512 × 512 in real time; lower it on older Macs if playback stutters.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

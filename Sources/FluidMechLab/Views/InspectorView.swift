@@ -14,7 +14,7 @@ struct InspectorView: View {
                 WellInspector(study: $study)
             case .fluid:
                 FluidInspector(study: $study)
-            case .damage, .sensitivity:
+            case .damage, .liveFlow, .sensitivity:
                 DrillingInspector(study: $study)
                 RockInspector(study: $study)
             case .nodal:

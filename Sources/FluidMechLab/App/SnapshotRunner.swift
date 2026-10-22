@@ -1,4 +1,5 @@
 import AppKit
+import Metal
 import FlowCore
 import SwiftUI
 
@@ -32,9 +33,19 @@ enum SnapshotRunner {
         for (appearanceName, appearance) in [("light", NSAppearance.Name.aqua), ("dark", NSAppearance.Name.darkAqua)] {
             NSApplication.shared.appearance = NSAppearance(named: appearance)
             for (i, section) in StudySection.allCases.enumerated() {
-                select(section)
-                await pause(section == .sensitivity ? 5 : 3)
+                // Select through the sidebar like a click, so a broken sidebar shows up in the log.
+                if !selectInSidebar(section, window: window) { select(section) }
+                await pause(section == .sensitivity ? 5 : (section == .liveFlow ? 9 : 3))
+                if !window.subtitle.hasPrefix(section.title) {
+                    log(dir, "sidebar selection of \(section.title) did not switch the pane (subtitle: \(window.subtitle))")
+                }
                 save(window, to: dir.appendingPathComponent("\(appearanceName)-\(i + 1)-\(section.rawValue).png"))
+                if section == .liveFlow {
+                    if let image = LiveFlowSnapshotRegistry.shared.snapshot() {
+                        write(NSImage(cgImage: image, size: .zero), to: dir.appendingPathComponent("\(appearanceName)-\(i + 1)-\(section.rawValue)-gpu.png"))
+                    }
+                    log(dir, "live flow: device=\(MTLCreateSystemDefaultDevice()?.name ?? "none") error=\(LiveFlowSnapshotRegistry.shared.lastError ?? "none")")
+                }
                 if section == .model3D, let image = Well3DSnapshotRegistry.shared.view?.snapshot() {
                     write(image, to: dir.appendingPathComponent("\(appearanceName)-\(i + 1)-\(section.rawValue)-scene.png"))
                 }
@@ -77,6 +88,32 @@ enum SnapshotRunner {
         }
     }
 
+    /// Selects a row in the sidebar's outline view, the same path a mouse click takes.
+    private static func selectInSidebar(_ section: StudySection, window: NSWindow) -> Bool {
+        guard let outline = findOutline(in: window.contentView) else { return false }
+        let row: Int
+        if let index = StudySection.modelSections.firstIndex(of: section) {
+            row = index + 1
+        } else if let index = StudySection.simulationSections.firstIndex(of: section) {
+            row = StudySection.modelSections.count + 2 + index
+        } else {
+            return false
+        }
+        guard row < outline.numberOfRows else { return false }
+        outline.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+        note("sidebar: selected row \(row) of \(outline.numberOfRows), now \(outline.selectedRow); delegate \(outline.delegate.map { String(describing: type(of: $0)) } ?? "none")")
+        return true
+    }
+
+    private static func findOutline(in view: NSView?) -> NSOutlineView? {
+        guard let view else { return nil }
+        if let outline = view as? NSOutlineView { return outline }
+        for child in view.subviews {
+            if let found = findOutline(in: child) { return found }
+        }
+        return nil
+    }
+
     private static func pause(_ seconds: Double) async {
         try? await Task.sleep(for: .seconds(seconds))
     }
@@ -96,6 +133,12 @@ enum SnapshotRunner {
     private static func write(_ image: NSImage, to url: URL) {
         guard let tiff = image.tiffRepresentation, let rep = NSBitmapImageRep(data: tiff) else { return }
         try? rep.representation(using: .png, properties: [:])?.write(to: url)
+    }
+
+    /// Adds a line to the snapshot log when running in snapshot mode.
+    static func note(_ message: String) {
+        guard let path = ProcessInfo.processInfo.environment["FMLAB_SNAPSHOT_DIR"] else { return }
+        log(URL(fileURLWithPath: path, isDirectory: true), message)
     }
 
     private static func log(_ dir: URL, _ message: String) {
