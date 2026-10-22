@@ -23,11 +23,7 @@ struct Well3DView: NSViewRepresentable {
         view.allowsCameraControl = true
         view.autoenablesDefaultLighting = false
         view.antialiasingMode = .multisampling4X
-        view.backgroundColor = NSColor(name: nil) { appearance in
-            appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-                ? NSColor(calibratedRed: 0.11, green: 0.13, blue: 0.16, alpha: 1)
-                : NSColor(calibratedRed: 0.86, green: 0.90, blue: 0.94, alpha: 1)
-        }
+        view.backgroundColor = Self.background(context.environment.colorScheme)
         view.defaultCameraController.interactionMode = .orbitTurntable
         view.defaultCameraController.inertiaEnabled = true
         Well3DSnapshotRegistry.shared.view = view
@@ -36,6 +32,7 @@ struct Well3DView: NSViewRepresentable {
     }
 
     func updateNSView(_ view: SCNView, context: Context) {
+        view.backgroundColor = Self.background(context.environment.colorScheme)
         let signature = Signature(well: well, damageSkin: damage?.skin, options: options)
         if context.coordinator.signature != signature {
             let first = context.coordinator.signature == nil
@@ -56,6 +53,12 @@ struct Well3DView: NSViewRepresentable {
     final class Coordinator {
         var signature: Signature?
         var wellName = ""
+    }
+
+    private static func background(_ scheme: ColorScheme) -> NSColor {
+        scheme == .dark
+            ? NSColor(calibratedRed: 0.11, green: 0.13, blue: 0.16, alpha: 1)
+            : NSColor(calibratedRed: 0.86, green: 0.90, blue: 0.94, alpha: 1)
     }
 
     private func update(_ view: SCNView, resetCamera: Bool) {

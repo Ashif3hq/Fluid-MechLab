@@ -61,21 +61,21 @@ struct WellArchitectureView: View {
         VStack(alignment: .leading, spacing: 10) {
             Table(study.well.casings, selection: $selectedCasing) {
                 TableColumn("String") { c in Text(c.name).fontWeight(c.id == selectedCasing ? .semibold : .regular) }
-                    .width(min: 76, ideal: 92)
+                    .width(min: 76, ideal: 84)
                 TableColumn("OD") { c in Text(pipeSizeLabel(c.outerDiameter)).monospacedDigit() }
-                    .width(44)
+                    .width(40)
                 TableColumn("ID (\(Quantity.diameter.symbol(units)))") { c in
                     Text(Quantity.diameter.display(c.innerDiameter, in: units).formatted(digits: units == .si ? 1 : 3)).monospacedDigit()
                 }
                 .width(62)
                 TableColumn("Hole") { c in Text(pipeSizeLabel(c.holeSize)).monospacedDigit() }
-                    .width(44)
+                    .width(40)
                 TableColumn("Top (\(Quantity.depth.symbol(units)))") { c in depthText(c.top) }
-                    .width(min: 56, ideal: 64)
+                    .width(54)
                 TableColumn("Shoe (\(Quantity.depth.symbol(units)))") { c in depthText(c.shoe) }
-                    .width(min: 56, ideal: 64)
+                    .width(54)
                 TableColumn("TOC (\(Quantity.depth.symbol(units)))") { c in depthText(c.topOfCement) }
-                    .width(min: 56, ideal: 64)
+                    .width(54)
             }
             .frame(minHeight: 150, maxHeight: 220)
 
