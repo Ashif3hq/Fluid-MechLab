@@ -67,7 +67,7 @@ public struct LiveInvasionSetup: Sendable {
         let inToM = 0.0254
         let n = max(size, 24)
         let rw = c.wellboreRadius * inToM
-        let depth = min(max(1.8 * (invasionDepth ?? 5), 3), 24) * inToM
+        let depth = min(max(1.4 * (invasionDepth ?? 5), 3), 24) * inToM
         let radius = rw + depth
         // Two spare cells around the disc so every rock cell has four neighbours.
         let dx = 2 * radius / Double(n - 4)

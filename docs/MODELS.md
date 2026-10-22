@@ -73,7 +73,7 @@ The productivity ratio is PR = (ln(re/rw) − 0.75) / (ln(re/rw) − 0.75 + S).
 
 The Live Flow screen solves the same physics as the 1D damage model, on a horizontal slice of rock around the borehole, so that permeability heterogeneity and uneven invasion can be seen as they develop.
 
-- **Grid.** A square grid (128² to 512²) covering the rock out to about 1.8 times the 1D invasion depth. Cells inside the bit radius hold mud; cells outside the disc are at pore pressure.
+- **Grid.** A square grid (128² to 512²) covering the rock out to about 1.4 times the 1D invasion depth. Cells inside the bit radius hold mud; cells outside the disc are at pore pressure.
 - **Rock.** Log-normal permeability k₀(x) = k̄ exp(σ g(x) − σ²/2), where g is a Gaussian random field made from 48 random Fourier modes with a set correlation length. σ is the Heterogeneity slider; σ = 0 gives a uniform rock.
 - **Pressure.** ∇·(k∇p) = 0 by red-black successive over-relaxation (ω = 1.85), warm-started every frame. Face conductances use the harmonic mean of the two cells. Each borehole face adds the cake resistance h/k_c. Each outer face adds the resistance of the ring out to the 1D model radius, so total rates match the 1D model. Borehole and outer faces are scaled by π/4 to correct for the staircase outline of a circle drawn in square cells.
 - **Transport.** Explicit first-order upwind, with substeps limited to 0.2 of the CFL limit:

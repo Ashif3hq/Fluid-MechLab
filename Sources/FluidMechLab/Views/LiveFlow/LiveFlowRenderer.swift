@@ -69,7 +69,7 @@ final class LiveFlowRenderer: NSObject, MTKViewDelegate {
     }
 
     func reset(setup: LiveInvasionSetup) throws {
-        solver = try LiveInvasionGPU(setup: setup, device: device, particleCount: 24576)
+        solver = try LiveInvasionGPU(setup: setup, device: device, particleCount: 6144)
         lastFrame = 0
     }
 
@@ -257,8 +257,8 @@ final class LiveFlowRenderer: NSObject, MTKViewDelegate {
                 float stripe = 0.5f + 0.5f * sin((rw - r) / max(cake, 1e-6f) * 18.0f);
                 return float4(mix(float3(0.42, 0.29, 0.17), float3(0.55, 0.40, 0.24), stripe), 1.0);
             }
-            float swirl = 0.03f * sin(atan2(world.y, world.x) * 7.0f + r * 400.0f);
-            return float4(mud + swirl, 1.0);
+            float speckle = fract(sin(dot(floor(world / (dx * 0.5f)), float2(39.346, 11.135))) * 43758.5453);
+            return float4(mud * (0.95f + 0.05f * speckle), 1.0);
         }
 
         // Bilinear sample of cell-centre values.
@@ -299,9 +299,9 @@ final class LiveFlowRenderer: NSObject, MTKViewDelegate {
         float scale = R[R_EXTENT] / (min(w, h) * 0.5f);
         ParticleOut out;
         out.position = float4(2.0f * q.x / (scale * w), 2.0f * q.y / (scale * h), 0.0, 1.0);
-        out.size = max(3.0f, min(w, h) / 300.0f);
+        out.size = max(2.5f, min(w, h) / 380.0f);
         float life = q.z / max(q.w, 1.0f);
-        out.alpha = 0.8f * smoothstep(0.0f, 0.12f, life) * (1.0f - smoothstep(0.75f, 1.0f, life));
+        out.alpha = 0.6f * smoothstep(0.0f, 0.12f, life) * (1.0f - smoothstep(0.75f, 1.0f, life));
         return out;
     }
 
