@@ -59,13 +59,15 @@ struct StudyWindow: View {
         List(selection: $section) {
             Section("Model") {
                 ForEach(StudySection.modelSections) { s in
-                    NavigationLink(value: s) { Label(s.title, systemImage: s.systemImage) }
+                    Label(s.title, systemImage: s.systemImage)
+                        .tag(s as StudySection?)
                 }
             }
             Section("Simulation") {
                 ForEach(StudySection.simulationSections) { s in
-                    NavigationLink(value: s) { Label(s.title, systemImage: s.systemImage) }
+                    Label(s.title, systemImage: s.systemImage)
                         .badge(badge(for: s))
+                        .tag(s as StudySection?)
                 }
             }
         }
