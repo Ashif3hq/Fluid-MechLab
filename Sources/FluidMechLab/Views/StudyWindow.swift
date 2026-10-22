@@ -51,6 +51,9 @@ struct StudyWindow: View {
         .fileExporter(isPresented: $isExporting, document: exportDocument, contentType: .commaSeparatedText,
                       defaultFilename: "\(document.study.title) – \(current.title).csv") { _ in }
         .focusedSceneValue(\.studyActions, actions)
+        .onChange(of: section) { old, new in
+            SnapshotRunner.note("section changed \(old.map(\.rawValue) ?? "nil") -> \(new.map(\.rawValue) ?? "nil")")
+        }
     }
 
     // MARK: Sidebar

@@ -101,6 +101,7 @@ enum SnapshotRunner {
         }
         guard row < outline.numberOfRows else { return false }
         outline.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+        note("sidebar: selected row \(row) of \(outline.numberOfRows), now \(outline.selectedRow); delegate \(outline.delegate.map { String(describing: type(of: $0)) } ?? "none")")
         return true
     }
 
@@ -132,6 +133,12 @@ enum SnapshotRunner {
     private static func write(_ image: NSImage, to url: URL) {
         guard let tiff = image.tiffRepresentation, let rep = NSBitmapImageRep(data: tiff) else { return }
         try? rep.representation(using: .png, properties: [:])?.write(to: url)
+    }
+
+    /// Adds a line to the snapshot log when running in snapshot mode.
+    static func note(_ message: String) {
+        guard let path = ProcessInfo.processInfo.environment["FMLAB_SNAPSHOT_DIR"] else { return }
+        log(URL(fileURLWithPath: path, isDirectory: true), message)
     }
 
     private static func log(_ dir: URL, _ message: String) {
