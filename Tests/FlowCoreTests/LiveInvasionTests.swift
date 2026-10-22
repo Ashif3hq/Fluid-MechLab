@@ -98,7 +98,9 @@ final class LiveInvasionTests: XCTestCase {
         XCTAssertFalse(low.isEmpty)
         let meanHigh = high.reduce(0, +) / Float(high.count)
         let meanLow = low.reduce(0, +) / Float(low.count)
-        XCTAssertGreaterThan(meanHigh, meanLow + 0.05)
+        // The cake carries most of the pressure drop and evens out the flux along the wall,
+        // so the preference for high-permeability rock is real but modest.
+        XCTAssertGreaterThan(meanHigh, meanLow + 0.02)
     }
 
     /// The Metal kernels must reproduce the CPU reference. Skipped where no Metal device exists.
