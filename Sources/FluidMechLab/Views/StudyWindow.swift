@@ -109,6 +109,8 @@ struct StudyWindow: View {
             PVTView(study: document.study)
         case .damage:
             FormationDamageView(study: document.study)
+        case .liveFlow:
+            LiveFlowView(study: document.study)
         case .nodal:
             NodalView(study: document.study)
         case .sensitivity:

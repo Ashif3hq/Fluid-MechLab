@@ -1,4 +1,5 @@
 import AppKit
+import Metal
 import FlowCore
 import SwiftUI
 
@@ -33,8 +34,14 @@ enum SnapshotRunner {
             NSApplication.shared.appearance = NSAppearance(named: appearance)
             for (i, section) in StudySection.allCases.enumerated() {
                 select(section)
-                await pause(section == .sensitivity ? 5 : 3)
+                await pause(section == .sensitivity ? 5 : (section == .liveFlow ? 9 : 3))
                 save(window, to: dir.appendingPathComponent("\(appearanceName)-\(i + 1)-\(section.rawValue).png"))
+                if section == .liveFlow {
+                    if let image = LiveFlowSnapshotRegistry.shared.snapshot() {
+                        write(NSImage(cgImage: image, size: .zero), to: dir.appendingPathComponent("\(appearanceName)-\(i + 1)-\(section.rawValue)-gpu.png"))
+                    }
+                    log(dir, "live flow: device=\(MTLCreateSystemDefaultDevice()?.name ?? "none") error=\(LiveFlowSnapshotRegistry.shared.lastError ?? "none")")
+                }
                 if section == .model3D, let image = Well3DSnapshotRegistry.shared.view?.snapshot() {
                     write(image, to: dir.appendingPathComponent("\(appearanceName)-\(i + 1)-\(section.rawValue)-scene.png"))
                 }

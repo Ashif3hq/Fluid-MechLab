@@ -12,6 +12,7 @@ Each study is a document (`.fmlab`) with a sidebar of sections, an inspector on 
 | **3D Model** | An orbitable 3D view of the well path, casing strings, rock layers, reservoir and the invaded zone around the hole. |
 | **Fluid PVT** | Black-oil properties (Rs, Bo, oil viscosity and density, gas Z-factor and viscosity) against pressure. |
 | **Formation Damage** | Radial invasion of mud filtrate and fine solids while drilling overbalanced: mud-cake growth, spurt loss, deep-bed filtration of fines, filtrate damage (clay swelling or water block), the permeability profile, a radial damage map, skin and productivity ratio. |
+| **Live Flow** | A real-time simulation of mud invasion around the borehole, computed and drawn on the Mac's GPU with Metal. Watch the cake build, the filtrate and fines move into heterogeneous rock, and permeability fall, with tracer particles showing the flow. Choose which field to show, play or pause, change the playback speed and the rock heterogeneity, and compare with the 1D model's front. |
 | **Nodal Analysis** | Inflow (Darcy + Vogel) against tubing outflow (Beggs-Brill along the deviated path), with the damage skin carried in. Shows the operating point, pressure traverse by flow pattern, holdup and the gradient split. |
 | **Sensitivity** | Sweeps one input (overbalance, exposure time, fines, λ₀, β, cake permeability, rock permeability) and plots skin, invasion depth and rate. |
 
