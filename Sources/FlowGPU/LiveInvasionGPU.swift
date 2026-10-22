@@ -42,7 +42,6 @@ public final class LiveInvasionGPU {
     public var particleStep: Float = 0.006
 
     public private(set) var time = 0.0
-    public private(set) var cumulativeFiltrate = 0.0
     public private(set) var maxSpeed: Float = 0
 
     private var states: [MTLBuffer]
@@ -133,7 +132,6 @@ public final class LiveInvasionGPU {
         solve.waitUntilCompleted()
 
         let maxFlux = readMaxima()
-        let inflow = wallInflow()
         let steps = setup.substeps(target: target, maxFaceFlux: maxFlux, maxSubsteps: maxSubsteps)
 
         // Pass 2: transport substeps, then particles. Later work on `queue` (such as rendering) runs after this.
@@ -151,7 +149,6 @@ public final class LiveInvasionGPU {
 
         let covered = Double(steps.count) * steps.dt
         time += covered
-        cumulativeFiltrate += inflow * covered
         return covered
     }
 
@@ -178,7 +175,7 @@ public final class LiveInvasionGPU {
         let p = UnsafeBufferPointer(start: pressure.contents().bindMemory(to: Float.self, capacity: n), count: n)
         let m = UnsafeBufferPointer(start: mobility.contents().bindMemory(to: Float.self, capacity: n), count: n)
         return LiveInvasionMetrics.stats(
-            setup: setup, wallCells: wallCells, time: time, cumulativeFiltrate: cumulativeFiltrate,
+            setup: setup, wallCells: wallCells, time: time,
             pressure: p, saturation: { state[$0].x }, retained: { state[$0].z }, cake: { state[$0].w }, mobility: m)
     }
 
@@ -206,14 +203,6 @@ public final class LiveInvasionGPU {
         }
         maxSpeed = speed
         return Double(flux)
-    }
-
-    private func wallInflow() -> Double {
-        let n = setup.size * setup.size
-        let state = stateBuffer.contents().bindMemory(to: SIMD4<Float>.self, capacity: n)
-        let p = UnsafeBufferPointer(start: pressure.contents().bindMemory(to: Float.self, capacity: n), count: n)
-        let m = UnsafeBufferPointer(start: mobility.contents().bindMemory(to: Float.self, capacity: n), count: n)
-        return LiveInvasionMetrics.wallInflow(setup: setup, wallCells: wallCells, pressure: p, cake: { state[$0].w }, mobility: m)
     }
 
     private func encodeParticles(_ encoder: MTLComputeCommandEncoder) {

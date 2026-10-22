@@ -64,21 +64,41 @@ final class LiveInvasionTests: XCTestCase {
         let c = testCase(hours: 0.5)
         let setup = LiveInvasionSetup(c, size: 48, invasionDepth: 3, heterogeneity: 0)
         let solver = LiveInvasionSolver(setup: setup)
-        solver.advance(by: 1)
+        // The cake forms within seconds, so compare a rate soon after it forms with one at the end.
+        var guardCount = 0
+        while solver.time < 30 && guardCount < 5000 {
+            solver.advance(by: 30 - solver.time)
+            guardCount += 1
+        }
         let early = solver.stats.filtrationRate
         run(solver, frames: 120)
-        let late = solver.stats.filtrationRate
-        XCTAssertGreaterThan(early, late * 5)
-        XCTAssertGreaterThan(solver.stats.cakeThickness, 0.1)
+        let late = solver.stats
+        XCTAssertGreaterThan(early, late.filtrationRate * 2)
+        XCTAssertGreaterThan(late.cakeThickness, 0.1)
     }
 
-    func testHeterogeneityMakesInvasionUneven() {
+    func testFiltrateInvadesHighPermeabilityRockFirst() {
         let c = testCase(hours: 0.5)
-        let setup = LiveInvasionSetup(c, size: 56, invasionDepth: 3, heterogeneity: 1.0, correlationLength: 0.8)
+        let setup = LiveInvasionSetup(c, size: 56, invasionDepth: 3, heterogeneity: 1.0, correlationLength: 1)
         let solver = LiveInvasionSolver(setup: setup)
         run(solver, frames: 120)
-        let stats = solver.stats
-        XCTAssertGreaterThan(stats.maxFiltrateDepth, stats.filtrateDepth * 1.2)
+        let reach = setup.wellboreRadius + 2 * solver.stats.filtrateDepth * 0.0254
+        var high: [Float] = [], low: [Float] = []
+        for j in 0..<setup.size {
+            for i in 0..<setup.size {
+                let index = j * setup.size + i
+                guard setup.cells[index] == .rock else { continue }
+                let (x, y) = setup.position(i, j)
+                guard (x * x + y * y).squareRoot() < reach else { continue }
+                if setup.k0[index] > 1.5 { high.append(solver.saturation[index]) }
+                if setup.k0[index] < 0.67 { low.append(solver.saturation[index]) }
+            }
+        }
+        XCTAssertFalse(high.isEmpty)
+        XCTAssertFalse(low.isEmpty)
+        let meanHigh = high.reduce(0, +) / Float(high.count)
+        let meanLow = low.reduce(0, +) / Float(low.count)
+        XCTAssertGreaterThan(meanHigh, meanLow + 0.05)
     }
 
     /// The Metal kernels must reproduce the CPU reference. Skipped where no Metal device exists.

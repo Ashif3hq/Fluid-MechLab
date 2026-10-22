@@ -188,7 +188,7 @@ public struct LiveInvasionStats: Equatable, Sendable {
     public var cakeThickness: Double = 0
     /// Filtrate flux at the borehole wall, cm/hr.
     public var filtrationRate: Double = 0
-    /// Cumulative filtrate per unit wall area, cm.
+    /// Cumulative filtrate per unit wall area, cm (the filtrate held in the rock, by mass balance).
     public var cumulativeFiltrate: Double = 0
     /// Lowest k/k₀ in the rock.
     public var minPermeabilityRatio: Double = 1
@@ -200,13 +200,14 @@ public struct LiveInvasionStats: Equatable, Sendable {
 /// unified memory and can be read directly.
 public enum LiveInvasionMetrics {
     public static func stats(
-        setup: LiveInvasionSetup, wallCells: [Int], time: Double, cumulativeFiltrate: Double,
+        setup: LiveInvasionSetup, wallCells: [Int], time: Double,
         pressure: UnsafeBufferPointer<Float>, saturation: (Int) -> Float, retained: (Int) -> Float,
         cake: (Int) -> Float, mobility: UnsafeBufferPointer<Float>
     ) -> LiveInvasionStats {
         let n = setup.size
         let inToM = 0.0254
         var invadedArea = 0.0
+        var storedFiltrate = 0.0
         var maxDepth = 0.0
         var minRatio = 1.0
         let cellArea = setup.cellSize * setup.cellSize
@@ -215,6 +216,7 @@ public enum LiveInvasionMetrics {
                 let index = j * n + i
                 guard setup.cells[index] == .rock else { continue }
                 let s = Double(saturation(index))
+                storedFiltrate += s * setup.displaceablePorosity * cellArea
                 if s > 0.5 {
                     invadedArea += cellArea
                     let (x, y) = setup.position(i, j)
@@ -232,7 +234,7 @@ public enum LiveInvasionMetrics {
         stats.cakeThickness = wallCells.isEmpty ? 0 : wallCells.reduce(0) { $0 + Double(cake($1)) } / Double(wallCells.count) * 1e3
         let inflow = wallInflow(setup: setup, wallCells: wallCells, pressure: pressure, cake: cake, mobility: mobility)
         stats.filtrationRate = inflow / (2 * .pi * rw) * 100 * 3600
-        stats.cumulativeFiltrate = cumulativeFiltrate / (2 * .pi * rw) * 100
+        stats.cumulativeFiltrate = storedFiltrate / (2 * .pi * rw) * 100
         stats.minPermeabilityRatio = minRatio
         return stats
     }
@@ -259,8 +261,6 @@ public enum LiveInvasionMetrics {
 public final class LiveInvasionSolver {
     public let setup: LiveInvasionSetup
     public private(set) var time = 0.0
-    /// Filtrate entered per metre of well, m².
-    public private(set) var cumulativeFiltrate = 0.0
     public private(set) var pressure: [Float]
     public private(set) var saturation: [Float]
     public private(set) var fines: [Float]
@@ -304,7 +304,7 @@ public final class LiveInvasionSolver {
         pressure.withUnsafeBufferPointer { p in
             mobility.withUnsafeBufferPointer { m in
                 LiveInvasionMetrics.stats(
-                    setup: setup, wallCells: wallCells, time: time, cumulativeFiltrate: cumulativeFiltrate,
+                    setup: setup, wallCells: wallCells, time: time,
                     pressure: p, saturation: { self.saturation[$0] }, retained: { self.retained[$0] },
                     cake: { self.cake[$0] }, mobility: m)
             }
@@ -381,7 +381,6 @@ public final class LiveInvasionSolver {
         let phi = Float(setup.porosity), phiD = Float(setup.displaceablePorosity)
         let wall = Float(LiveInvasionSetup.wallFactor)
         var newS = saturation, newC = fines, newSigma = retained, newCake = cake
-        var inflow: Float = 0
         let offsets = [-1, 1, -n, n]
         for a in saturation.indices where setup.cells[a] == .rock {
             let inlet = Float(setup.finesInlet) * max(0, 1 - cake[a] / Float(setup.bridgingCake))
@@ -419,14 +418,12 @@ public final class LiveInvasionSolver {
                 var dh = Float(setup.cakeGrowth) * un * dtf
                 if setup.equilibriumCake > 0 { dh *= max(0, 1 - cake[a] / Float(setup.equilibriumCake)) }
                 newCake[a] = cake[a] + dh
-                inflow += mudIn
             }
         }
         saturation = newS
         fines = newC
         retained = newSigma
         cake = newCake
-        cumulativeFiltrate += Double(inflow) * setup.cellSize * dt
         time += dt
     }
 }
