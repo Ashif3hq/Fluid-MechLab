@@ -55,7 +55,7 @@ struct WellSchematic: View {
         drawDots(&context, in: resRect)
         context.draw(
             Text("Reservoir").font(.caption2.weight(.semibold)).foregroundColor(.brown),
-            at: CGPoint(x: 56, y: resRect.minY - 2), anchor: .bottomLeading)
+            at: CGPoint(x: 56, y: resRect.maxY + 2), anchor: .topLeading)
 
         // Damaged zone around the perforations, width ∝ invasion depth (exaggerated).
         if let damage, let perfTop = well.perforations.map(\.top).min(), let perfBottom = well.perforations.map(\.bottom).max() {

@@ -31,7 +31,7 @@ struct WellArchitectureView: View {
                         .frame(minHeight: 480)
                 }
                 .padding(16)
-                .frame(minWidth: 380, idealWidth: 460, maxWidth: 620)
+                .frame(minWidth: 340, idealWidth: 380, maxWidth: 560)
 
                 VStack(alignment: .leading, spacing: 12) {
                     Picker("Section", selection: $tab) {
@@ -61,7 +61,7 @@ struct WellArchitectureView: View {
         VStack(alignment: .leading, spacing: 10) {
             Table(study.well.casings, selection: $selectedCasing) {
                 TableColumn("String") { c in Text(c.name).fontWeight(c.id == selectedCasing ? .semibold : .regular) }
-                    .width(min: 80, ideal: 100)
+                    .width(min: 76, ideal: 92)
                 TableColumn("OD") { c in Text(pipeSizeLabel(c.outerDiameter)).monospacedDigit() }
                     .width(44)
                 TableColumn("ID (\(Quantity.diameter.symbol(units)))") { c in

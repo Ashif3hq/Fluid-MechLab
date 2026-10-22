@@ -113,12 +113,12 @@ struct WellSceneBuilder {
         let ambient = SCNNode()
         ambient.light = SCNLight()
         ambient.light?.type = .ambient
-        ambient.light?.intensity = 450
+        ambient.light?.intensity = 300
         root.addChildNode(ambient)
         let sun = SCNNode()
         sun.light = SCNLight()
         sun.light?.type = .directional
-        sun.light?.intensity = 900
+        sun.light?.intensity = 650
         sun.eulerAngles = SCNVector3(-CGFloat.pi / 3, CGFloat.pi / 5, 0)
         root.addChildNode(sun)
 
@@ -212,7 +212,7 @@ struct WellSceneBuilder {
 
     private func material(_ color: NSColor, metallic: Bool = false) -> SCNMaterial {
         let m = SCNMaterial()
-        m.diffuse.contents = color
+        m.diffuse.contents = color.withAlphaComponent(1)
         m.lightingModel = metallic ? .physicallyBased : .blinn
         if metallic {
             m.metalness.contents = 0.8
@@ -227,7 +227,10 @@ struct WellSceneBuilder {
     private func addLayer(_ root: SCNNode, top: Double, bottom: Double, halfWidth: CGFloat, x: CGFloat, z: CGFloat, color: NSColor) {
         let h = CGFloat(max(bottom - top, 1) / unit)
         let box = SCNBox(width: halfWidth * 2, height: h, length: halfWidth * 2, chamferRadius: 0)
-        box.firstMaterial = material(color)
+        // Flat shading keeps the layer colours true instead of washing out under the lights.
+        let m = material(color)
+        m.lightingModel = .constant
+        box.firstMaterial = m
         let node = SCNNode(geometry: box)
         node.position = SCNVector3(x, CGFloat(-(top + bottom) / 2 / unit), z)
         node.renderingOrder = -1
