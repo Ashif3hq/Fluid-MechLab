@@ -63,14 +63,14 @@ struct StudyWindow: View {
             Section("Model") {
                 ForEach(StudySection.modelSections) { s in
                     Label(s.title, systemImage: s.systemImage)
-                        .tag(s as StudySection?)
+                        .tag(s)
                 }
             }
             Section("Simulation") {
                 ForEach(StudySection.simulationSections) { s in
                     Label(s.title, systemImage: s.systemImage)
                         .badge(badge(for: s))
-                        .tag(s as StudySection?)
+                        .tag(s)
                 }
             }
         }
