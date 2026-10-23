@@ -3,6 +3,7 @@ import FlowGPU
 import MetalKit
 import QuartzCore
 import simd
+import SwiftUI
 
 /// Layout shared with the shader's `Uniforms`.
 struct Invasion3DUniforms {
