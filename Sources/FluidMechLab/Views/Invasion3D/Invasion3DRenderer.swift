@@ -508,7 +508,8 @@ final class Invasion3DRenderer: NSObject, MTKViewDelegate {
             if (solidDistance(p, U, true) <= 0.0f) {
                 float4 s = sampleField(p, U, field);
                 float value = fieldIndex == 5 ? s.x * 0.6f : s.x;
-                float alpha = 1.0f - exp(-density * pow(clamp(value, 0.0f, 1.0f), 1.6f) * step);
+                // Opacity rises steeply at low values, so slight damage (a few per cent of capacity) is still visible.
+                float alpha = 1.0f - exp(-density * pow(clamp(value, 0.0f, 1.0f), 0.7f) * step);
                 accumulated += transmittance * alpha * colourMap(fieldIndex, s.x);
                 transmittance *= 1.0f - alpha;
             }
@@ -580,7 +581,7 @@ final class Invasion3DSnapshotRegistry {
         var images: [(String, CGImage)] = []
         let views: [(String, Invasion3DController.RenderMode, Invasion3DController.Field)] = [
             ("cutaway-filtrate", .cutaway, .filtrate), ("cutaway-damage", .cutaway, .damage),
-            ("front", .front, .damage), ("volume-fines", .volume, .retained),
+            ("front", .front, .damage), ("volume-damage", .volume, .damage),
         ]
         for (name, mode, field) in views {
             controller.mode = mode

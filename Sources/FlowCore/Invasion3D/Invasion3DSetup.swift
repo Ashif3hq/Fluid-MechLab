@@ -59,7 +59,8 @@ public struct Invasion3DOptions: Equatable, Codable, Sendable {
     public var resolution: Resolution = .standard
     /// Length of borehole simulated, inches.
     public var intervalLength: Double = 18
-    /// Radial extent of rock beyond the borehole wall, inches. Nil sizes it from the 1D invasion depth.
+    /// Radial extent of rock beyond the borehole wall, inches. Nil sizes it to 1.6 times the 1D invasion depth (3 to 48 in),
+    /// so a front that runs ahead in permeable streaks still stays inside the model.
     public var domainDepth: Double?
     /// Standard deviation of ln k.
     public var heterogeneity: Double = 0.5
@@ -173,7 +174,7 @@ public struct Invasion3DSetup: Sendable {
         self.nt = nt
         self.nz = nz
         let rw = c.wellboreRadius * inToM
-        let depth = options.domainDepth ?? min(max(1.4 * (invasionDepth ?? 5), 3), 24)
+        let depth = options.domainDepth ?? min(max(1.6 * (invasionDepth ?? 5), 3), 48)
         let radius = rw + max(depth, 0.5) * inToM
         let length = max(options.intervalLength, 0.5) * inToM
         let boundary = max(c.modelRadius * MudInvasionSimulator.ftToM, radius)
