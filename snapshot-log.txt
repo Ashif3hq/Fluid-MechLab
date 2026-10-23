@@ -1,0 +1,39 @@
+2026-10-23 09:37:03 +0000: launched
+2026-10-23 09:37:05 +0000: sidebar: selected row 1 of 10, now 1; delegate OutlineListCoordinator<SelectionManagerBox<StudySection>>
+2026-10-23 09:37:08 +0000: sidebar: selected row 2 of 10, now 2; delegate OutlineListCoordinator<SelectionManagerBox<StudySection>>
+2026-10-23 09:37:08 +0000: section changed architecture -> model3D
+2026-10-23 09:37:12 +0000: sidebar: selected row 3 of 10, now 3; delegate OutlineListCoordinator<SelectionManagerBox<StudySection>>
+2026-10-23 09:37:12 +0000: section changed model3D -> fluid
+2026-10-23 09:37:15 +0000: sidebar: selected row 5 of 10, now 5; delegate OutlineListCoordinator<SelectionManagerBox<StudySection>>
+2026-10-23 09:37:15 +0000: section changed fluid -> damage
+2026-10-23 09:37:18 +0000: sidebar: selected row 6 of 10, now 6; delegate OutlineListCoordinator<SelectionManagerBox<StudySection>>
+2026-10-23 09:37:18 +0000: section changed damage -> liveFlow
+2026-10-23 09:37:27 +0000: live flow: device=Apple Paravirtual device error=none
+2026-10-23 09:37:27 +0000: sidebar: selected row 7 of 10, now 7; delegate OutlineListCoordinator<SelectionManagerBox<StudySection>>
+2026-10-23 09:37:27 +0000: section changed liveFlow -> invasion3D
+2026-10-23 09:38:19 +0000: 3D invasion: t=43.81017967060051 h front=21.716715270304736 in cake=1.9999947398900986 mm massBalance=7.079292245962021e-05 solves=1063 sweeps=56 imbalance=1.0102560382706175e-05 error=none
+2026-10-23 09:38:19 +0000: sidebar: selected row 8 of 10, now 8; delegate OutlineListCoordinator<SelectionManagerBox<StudySection>>
+2026-10-23 09:38:19 +0000: section changed invasion3D -> nodal
+2026-10-23 09:38:22 +0000: sidebar: selected row 9 of 10, now 9; delegate OutlineListCoordinator<SelectionManagerBox<StudySection>>
+2026-10-23 09:38:23 +0000: section changed nodal -> sensitivity
+2026-10-23 09:38:28 +0000: sidebar: selected row 1 of 10, now 1; delegate OutlineListCoordinator<SelectionManagerBox<StudySection>>
+2026-10-23 09:38:28 +0000: section changed sensitivity -> architecture
+2026-10-23 09:38:31 +0000: sidebar: selected row 2 of 10, now 2; delegate OutlineListCoordinator<SelectionManagerBox<StudySection>>
+2026-10-23 09:38:31 +0000: section changed architecture -> model3D
+2026-10-23 09:38:34 +0000: sidebar: selected row 3 of 10, now 3; delegate OutlineListCoordinator<SelectionManagerBox<StudySection>>
+2026-10-23 09:38:34 +0000: section changed model3D -> fluid
+2026-10-23 09:38:37 +0000: sidebar: selected row 5 of 10, now 5; delegate OutlineListCoordinator<SelectionManagerBox<StudySection>>
+2026-10-23 09:38:37 +0000: section changed fluid -> damage
+2026-10-23 09:38:40 +0000: sidebar: selected row 6 of 10, now 6; delegate OutlineListCoordinator<SelectionManagerBox<StudySection>>
+2026-10-23 09:38:40 +0000: section changed damage -> liveFlow
+2026-10-23 09:38:50 +0000: live flow: device=Apple Paravirtual device error=none
+2026-10-23 09:38:50 +0000: sidebar: selected row 7 of 10, now 7; delegate OutlineListCoordinator<SelectionManagerBox<StudySection>>
+2026-10-23 09:38:50 +0000: section changed liveFlow -> invasion3D
+2026-10-23 09:39:41 +0000: 3D invasion: t=28.725026215305196 h front=17.099373270947467 in cake=1.9999947398900986 mm massBalance=8.991930420247258e-05 solves=1004 sweeps=56 imbalance=9.714634813304302e-06 error=none
+2026-10-23 09:39:41 +0000: sidebar: selected row 8 of 10, now 8; delegate OutlineListCoordinator<SelectionManagerBox<StudySection>>
+2026-10-23 09:39:42 +0000: section changed invasion3D -> nodal
+2026-10-23 09:39:45 +0000: sidebar: selected row 9 of 10, now 9; delegate OutlineListCoordinator<SelectionManagerBox<StudySection>>
+2026-10-23 09:39:45 +0000: section changed nodal -> sensitivity
+2026-10-23 09:39:50 +0000: section changed sensitivity -> nodal
+2026-10-23 09:39:52 +0000: section changed nodal -> architecture
+2026-10-23 09:39:55 +0000: done
