@@ -227,7 +227,12 @@ enum Invasion3DShaders {
             float growth = P[P_ALPHA] * max(f.x, 0.0f) / (rw * dth * dz);
             if (P[P_HEQ] > 0.0f) { growth *= max(0.0f, 1.0f - cake / P[P_HEQ]); }
             float innerRadius = max(rw - cake, 0.05f * rw);
-            float cakeRate = growth / (innerRadius * P[P_KC] * dth * dz) * tw;
+            // Relative to the column's whole series resistance, as on the CPU.
+            float resistance = 1.0f / tw;
+            uint base = g.index(0, j, k);
+            for (uint ii = 0; ii + 1 < g.nr; ii++) { resistance += 1.0f / radialT(lam[base + ii], lam[base + ii + 1], P); }
+            resistance += 1.0f / outerT(lam[base + g.nr - 1], P);
+            float cakeRate = growth / (innerRadius * P[P_KC] * dth * dz) / resistance;
             atomic_fetch_max_explicit(&maxima[1], as_type<uint>(cakeRate), memory_order_relaxed);
         }
     }

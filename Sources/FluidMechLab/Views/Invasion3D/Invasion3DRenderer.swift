@@ -430,8 +430,8 @@ final class Invasion3DRenderer: NSObject, MTKViewDelegate {
             bool flat = fabs(n.z) > 0.5f || fabs(dot(n.xy, normalize(p.xy))) < 0.5f;
             if (spacing > 0.0f && flat) {
                 float q = (r - rw) / spacing;
-                float ring = 1.0f - smoothstep(0.5f, 1.5f, fabs(q - round(q)) / max(fwidth(q), 1e-5f));
-                base = mix(base, base * 0.55f, 0.55f * ring);
+                float ring = 1.0f - smoothstep(0.3f, 1.1f, fabs(q - round(q)) / max(fwidth(q), 1e-5f));
+                base = mix(base, base * 0.7f, 0.45f * ring);
             }
             float3 colour = shade(base, n, v, 0.42f);
             colour = mix(colour, float3(1.0f), 0.85f * front * (fieldIndex == 0 ? 0.0f : 1.0f));

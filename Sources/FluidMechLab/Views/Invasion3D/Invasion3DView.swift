@@ -82,8 +82,24 @@ final class Invasion3DController {
     var camera = Camera()
     /// Height of the cutaway floor, as a fraction of the half interval (−1 bottom, 1 top).
     var cutawayHeight: Float = 0
-    /// Spacing of the depth rings on cut faces, m (0 hides them).
-    var ringSpacing: Double = 0.0254
+    /// Depth rings on cut faces are drawn at round metric spacings instead of round inch spacings.
+    var metricRings = false
+
+    /// Spacing of the depth rings on cut faces, m: the smallest round step that keeps about eight rings across the rock.
+    var ringSpacing: Double {
+        guard let setup else { return 0 }
+        let depth = setup.domainRadius - setup.wellboreRadius
+        let steps = metricRings ? [0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5] : [0.5, 1, 2, 3, 6, 12, 24].map { $0 * 0.0254 }
+        return steps.first { depth / $0 <= 8 } ?? steps.last!
+    }
+
+    /// The ring spacing as text, such as "2 in" or "5 cm".
+    var ringSpacingLabel: String {
+        let step = ringSpacing
+        if metricRings { return step < 0.01 ? "\((step * 1000).formatted()) mm" : "\((step * 100).formatted()) cm" }
+        return "\((step / 0.0254).formatted()) in"
+    }
+
     var volumeOpacity: Double = 1.6
     var backgroundTop: (r: Double, g: Double, b: Double) = (0.97, 0.97, 0.98)
     var backgroundBottom: (r: Double, g: Double, b: Double) = (0.86, 0.87, 0.89)
@@ -297,7 +313,7 @@ struct Invasion3DView: View {
             controller.backgroundTop = (0.97, 0.97, 0.98)
             controller.backgroundBottom = (0.84, 0.85, 0.88)
         }
-        controller.ringSpacing = units == .si ? 0.01 : 0.0254
+        controller.metricRings = units == .si
     }
 }
 
@@ -319,7 +335,7 @@ private struct Invasion3DOverlays: View {
                     Text("Grid \(setup.nr) × \(setup.nt) × \(setup.nz) (r × θ × z), \(setup.cellCount.formatted()) cells")
                     Text("Rock to \(Quantity.invasionDepth.format((setup.domainRadius - setup.wellboreRadius) / 0.0254, digits: 1, in: units)) from the wall, interval \(Quantity.invasionDepth.format(setup.length / 0.0254, digits: 0, in: units))")
                     if controller.mode == .cutaway {
-                        Text("Rings every \(units == .si ? "1 cm" : "1 in") into the formation")
+                        Text("Rings every \(controller.ringSpacingLabel) into the formation")
                     }
                 }
                 .font(.caption2)
@@ -451,7 +467,7 @@ private struct Invasion3DControlBar: View {
     @Binding var showCalibration: Bool
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
             Button {
                 if controller.isFinished { controller.restart() } else { controller.isPlaying.toggle() }
             } label: {
@@ -464,7 +480,7 @@ private struct Invasion3DControlBar: View {
                 .help("Restart the exposure")
 
             ProgressView(value: min(controller.stats.time, controller.exposureHours), total: max(controller.exposureHours, 1e-9))
-                .frame(minWidth: 60, maxWidth: 160)
+                .frame(minWidth: 36, maxWidth: 160)
 
             Picker("View", selection: $controller.mode) {
                 ForEach(Invasion3DController.RenderMode.allCases) { Text($0.title).tag($0).help($0.help) }
@@ -478,12 +494,14 @@ private struct Invasion3DControlBar: View {
             }
             .fixedSize()
 
-            Picker("Duration", selection: $controller.playbackSeconds) {
+            Picker(selection: $controller.playbackSeconds) {
                 Text("30 s").tag(30.0)
                 Text("1 min").tag(60.0)
                 Text("2 min").tag(120.0)
                 Text("5 min").tag(300.0)
                 Text("10 min").tag(600.0)
+            } label: {
+                Image(systemName: "timer")
             }
             .fixedSize()
             .help("Screen time for the whole exposure. The solver never takes larger steps than its accuracy limits allow; on fine grids it may run slower than this.")
@@ -515,6 +533,7 @@ private struct Invasion3DControlBar: View {
             Button { showCalibration = true } label: { Label("Calibrate", systemImage: "testtube.2") }
                 .help("Fit cake and damage parameters to laboratory data")
         }
+        .labelStyle(.iconOnly)
         .controlSize(.small)
         .padding(.horizontal, 14)
         .padding(.vertical, 8)

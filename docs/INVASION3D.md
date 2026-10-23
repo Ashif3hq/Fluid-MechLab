@@ -98,7 +98,7 @@ Face transmissibilities are harmonic combinations of the two half-cells. Because
 
 The interval between pressure solves is limited in two ways:
 
-- **Cake coupling.** The relative change in any wall conductance is at most ε (default 0.01). The resulting coupling error is about 0.2 ε (verification case V5).
+- **Cake coupling.** Within one pressure solve the filtration rate of any column (the inverse of its series resistance: cake, rock and outer ring) may change by at most a fraction ε (default 0.01). The resulting coupling error is about 0.25 ε (verification case V5). Measuring the change against the whole column, not the wall face alone, lets the first seconds, when a cake a few nanometres thick already dominates the wall face but not the rock, pass in a few hundred pressure solves instead of thousands.
 - **Step count.** At most 8 transport steps are taken per solve.
 
 **Transport.** The default scheme is second-order MUSCL reconstruction with the van Leer limiter, with two-stage strong-stability-preserving Runge–Kutta time stepping (SSP-RK2) at Courant number 0.4. First-order upwind with forward Euler at Courant number 0.8 is also available.

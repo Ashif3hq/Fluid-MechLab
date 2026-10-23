@@ -374,7 +374,8 @@ public final class Invasion3DSolver {
     }
 
     /// Computes face flow rates and cell speeds from the pressure field.
-    /// Returns the largest transport rate (1/s, for the step limit) and the largest relative rate of change of a wall conductance (1/s).
+    /// Returns the largest transport rate (1/s, for the step limit) and the largest relative rate of change of a column's
+    /// filtration rate as its cake grows (1/s).
     func updateFluxes() -> (maxRate: Double, maxCakeRate: Double) {
         let t = Invasion3DSolver.conductances(setup: setup, mobility: mobility, cake: cake)
         let nr = setup.nr, nt = setup.nt, nz = setup.nz
@@ -421,7 +422,11 @@ public final class Invasion3DSolver {
                 if setup.equilibriumCake > 0 { growth *= max(0, 1 - cake[col] / setup.equilibriumCake) }
                 let inner = max(setup.wellboreRadius - cake[col], 0.05 * setup.wellboreRadius)
                 let resistanceRate = growth / (inner * setup.cakeMobility * setup.dTheta * setup.dz)
-                maxCakeRate = max(maxCakeRate, resistanceRate * t.wall[col])
+                // Relative rate of change of the column's whole series resistance (cake, wall half cell, rock, outer ring),
+                // which is the relative rate of change of its filtration rate.
+                var resistance: Double = 1 / t.wall[col]
+                for i in 0..<nr { resistance += 1 / t.radial[setup.index(i, j, k)] }
+                maxCakeRate = max(maxCakeRate, resistanceRate / resistance)
             }
         }
         return (maxRate, maxCakeRate)
