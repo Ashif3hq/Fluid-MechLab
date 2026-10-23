@@ -402,13 +402,17 @@ public final class Invasion3DSolver {
                     let f = flux[a]
                     let angularPlus = flux[setup.index(i, jp, k)].y
                     let axialPlus = k < nz - 1 ? flux[setup.index(i, j, k + 1)].z : 0
-                    let ur = 0.5 * (f.x / (setup.faces[i] * setup.dTheta * setup.dz) + f.w / (setup.faces[i + 1] * setup.dTheta * setup.dz))
-                    let ut = 0.5 * (f.y + angularPlus) / ((setup.faces[i + 1] - setup.faces[i]) * setup.dz)
-                    let uz = 0.5 * (f.z + axialPlus) / setup.area[i]
-                    let u = (ur * ur + ut * ut + uz * uz).squareRoot()
+                    let innerArea: Double = setup.faces[i] * setup.dTheta * setup.dz
+                    let outerArea: Double = setup.faces[i + 1] * setup.dTheta * setup.dz
+                    let ur: Double = 0.5 * (f.x / innerArea + f.w / outerArea)
+                    let ut: Double = 0.5 * (f.y + angularPlus) / ((setup.faces[i + 1] - setup.faces[i]) * setup.dz)
+                    let uz: Double = 0.5 * (f.z + axialPlus) / setup.area[i]
+                    let u: Double = (ur * ur + ut * ut + uz * uz).squareRoot()
                     speed[a] = u
-                    let out = max(-f.x, 0) + max(f.w, 0) + max(-f.y, 0) + max(angularPlus, 0) + max(-f.z, 0) + max(axialPlus, 0)
-                    let rate = out / (setup.displaceablePorosity * setup.volume[i]) + setup.filtrationCoefficient * u / setup.porosity
+                    var out: Double = max(-f.x, 0.0) + max(f.w, 0.0)
+                    out += max(-f.y, 0.0) + max(angularPlus, 0.0)
+                    out += max(-f.z, 0.0) + max(axialPlus, 0.0)
+                    let rate: Double = out / (setup.displaceablePorosity * setup.volume[i]) + setup.filtrationCoefficient * u / setup.porosity
                     maxRate = max(maxRate, rate)
                 }
                 let col = setup.column(j, k)

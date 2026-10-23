@@ -186,20 +186,25 @@ public struct Invasion3DSetup: Sendable {
 
         let growth = pow(radius / rw, 1 / Double(nr))
         let logGrowth = log(growth)
-        let faces = (0...nr).map { rw * pow(growth, Double($0)) }
-        let centres = (0..<nr).map { rw * pow(growth, Double($0) + 0.5) }
+        let faces: [Double] = (0...nr).map { (i: Int) -> Double in rw * pow(growth, Double(i)) }
+        let centres: [Double] = (0..<nr).map { (i: Int) -> Double in rw * pow(growth, Double(i) + 0.5) }
         let dTheta = 2 * Double.pi / Double(nt)
         let dz = length / Double(nz)
-        let area = (0..<nr).map { 0.5 * (faces[$0 + 1] * faces[$0 + 1] - faces[$0] * faces[$0]) * dTheta }
+        var area = [Double](repeating: 0, count: nr)
+        for i in 0..<nr {
+            let outer: Double = faces[i + 1] * faces[i + 1]
+            let inner: Double = faces[i] * faces[i]
+            area[i] = 0.5 * (outer - inner) * dTheta
+        }
         self.faces = faces
         self.centres = centres
         self.dTheta = dTheta
         self.dz = dz
         self.area = area
-        volume = area.map { $0 * dz }
+        volume = area.map { (a: Double) -> Double in a * dz }
         halfRadial = 0.5 * logGrowth / (dTheta * dz)
         halfAngular = 0.5 * dTheta / (dz * logGrowth)
-        halfAxial = area.map { 0.5 * dz / $0 }
+        halfAxial = area.map { (a: Double) -> Double in 0.5 * dz / a }
         outerResistance = boundary > radius ? log(boundary / radius) / (dTheta * dz) : 0
 
         velocityScale = c.permeability * MudInvasionSimulator.mdToM2 * c.overbalance * MudInvasionSimulator.psiToPa

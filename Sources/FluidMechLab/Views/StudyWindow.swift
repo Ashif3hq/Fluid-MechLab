@@ -116,6 +116,8 @@ struct StudyWindow: View {
             FormationDamageView(study: document.study)
         case .liveFlow:
             LiveFlowView(study: document.study)
+        case .invasion3D:
+            Invasion3DView(study: $document.study)
         case .nodal:
             NodalView(study: document.study)
         case .sensitivity:

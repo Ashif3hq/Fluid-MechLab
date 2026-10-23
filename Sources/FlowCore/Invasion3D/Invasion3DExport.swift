@@ -165,8 +165,10 @@ public enum Invasion3DExport {
                 }
             }
             let r = s.centres[i]
-            rows.append([r, (r - s.wellboreRadius) / 0.0254, sSum / ring, sMin, sMax, kSum / ring, kMin, sigma / ring, c / ring,
-                         p / ring * s.overbalance].map { format($0) }.joined(separator: ","))
+            let depth: Double = (r - s.wellboreRadius) / 0.0254
+            let pressure: Double = p / ring * s.overbalance
+            let values: [Double] = [r, depth, sSum / ring, sMin, sMax, kSum / ring, kMin, sigma / ring, c / ring, pressure]
+            rows.append(row(values))
         }
         return rows.joined(separator: "\n") + "\n"
     }
@@ -180,7 +182,9 @@ public enum Invasion3DExport {
                 let r = Invasion3DMetrics.frontRadius(setup: s, j: j, k: k) { snap.saturation[$0] }
                 let angle = (Double(j) + 0.5) * s.dTheta * 180 / .pi
                 let z = (Double(k) + 0.5) * s.dz - 0.5 * s.length
-                rows.append([angle, z, (r - s.wellboreRadius) / 0.0254, snap.cake[s.column(j, k)] * 1e3].map { format($0) }.joined(separator: ","))
+                let depth: Double = (r - s.wellboreRadius) / 0.0254
+                let cake: Double = snap.cake[s.column(j, k)] * 1e3
+                rows.append(row([angle, z, depth, cake]))
             }
         }
         return rows.joined(separator: "\n") + "\n"
@@ -190,12 +194,17 @@ public enum Invasion3DExport {
     public static func historyCSV(_ history: [Invasion3DStats]) -> String {
         var rows = ["time_h,filtrate_depth_in,front_mean_in,front_min_in,front_max_in,front_spread_in,cake_mean_mm,cake_min_mm,cake_max_mm,filtration_rate_cm_per_h,cumulative_filtrate_cm,min_k_over_k0,mean_invaded_k_over_k0,mass_balance_error,pressure_solves,last_pressure_sweeps,last_flow_imbalance"]
         for h in history {
-            rows.append([h.time, h.filtrateDepth, h.frontMean, h.frontMin, h.frontMax, h.frontSpread, h.cakeMean, h.cakeMin, h.cakeMax,
-                         h.filtrationRate, h.cumulativeFiltrate, h.minPermeabilityRatio, h.meanInvadedPermeabilityRatio,
-                         h.massBalanceError, Double(h.pressureSolves), Double(h.lastIterations), h.lastImbalance]
-                .map { format($0) }.joined(separator: ","))
+            var values: [Double] = [h.time, h.filtrateDepth, h.frontMean, h.frontMin, h.frontMax, h.frontSpread]
+            values += [h.cakeMean, h.cakeMin, h.cakeMax, h.filtrationRate, h.cumulativeFiltrate]
+            values += [h.minPermeabilityRatio, h.meanInvadedPermeabilityRatio, h.massBalanceError]
+            values += [Double(h.pressureSolves), Double(h.lastIterations), h.lastImbalance]
+            rows.append(row(values))
         }
         return rows.joined(separator: "\n") + "\n"
+    }
+
+    static func row(_ values: [Double]) -> String {
+        values.map { (v: Double) -> String in format(v) }.joined(separator: ",")
     }
 
     static func format(_ v: Double) -> String {

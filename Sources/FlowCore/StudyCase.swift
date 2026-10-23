@@ -20,6 +20,14 @@ public struct StudyCase: Equatable, Codable, Sendable {
     public var includeDamageSkin: Bool
     /// Name of the preset this case was built from, if any.
     public var basedOn: String?
+    /// Settings of the 3D invasion model. Nil in studies saved before it existed.
+    public var invasion3D: Invasion3DOptions?
+
+    /// 3D model settings, with defaults when the study has none.
+    public var invasionOptions: Invasion3DOptions {
+        get { invasion3D ?? Invasion3DOptions() }
+        set { invasion3D = newValue }
+    }
 
     public init(
         title: String = "Untitled Study",
@@ -31,7 +39,8 @@ public struct StudyCase: Equatable, Codable, Sendable {
         producingGOR: Double = 600,
         mud: MudInvasionCase = MudInvasionCase(),
         includeDamageSkin: Bool = true,
-        basedOn: String? = nil
+        basedOn: String? = nil,
+        invasion3D: Invasion3DOptions? = nil
     ) {
         self.title = title
         self.notes = notes
@@ -43,6 +52,7 @@ public struct StudyCase: Equatable, Codable, Sendable {
         self.mud = mud
         self.includeDamageSkin = includeDamageSkin
         self.basedOn = basedOn
+        self.invasion3D = invasion3D
     }
 
     /// Formation damage inputs with rock and geometry taken from the reservoir and well.
