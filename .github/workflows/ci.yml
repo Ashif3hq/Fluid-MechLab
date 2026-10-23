@@ -34,8 +34,8 @@ jobs:
           FMLAB_SNAPSHOT_PRESET="Deepwater Turbidite Sandstone" \
             "build/Fluid MechLab.app/Contents/MacOS/FluidMechLab" &
           APP_PID=$!
-          # Give the app up to 3 minutes, then stop it.
-          for i in $(seq 1 180); do
+          # Give the app up to 5 minutes, then stop it.
+          for i in $(seq 1 300); do
             if ! kill -0 $APP_PID 2>/dev/null; then break; fi
             if [ "$i" = 40 ]; then screencapture -x build/screenshots/full-screen.png || true; fi
             sleep 1

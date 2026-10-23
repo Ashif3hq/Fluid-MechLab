@@ -47,6 +47,7 @@ enum SnapshotRunner {
                     log(dir, "live flow: device=\(MTLCreateSystemDefaultDevice()?.name ?? "none") error=\(LiveFlowSnapshotRegistry.shared.lastError ?? "none")")
                 }
                 if section == .invasion3D {
+                    Invasion3DSnapshotRegistry.shared.fastForward(budget: 35)
                     for (name, image) in Invasion3DSnapshotRegistry.shared.snapshots() {
                         write(NSImage(cgImage: image, size: .zero), to: dir.appendingPathComponent("\(appearanceName)-\(i + 1)-\(section.rawValue)-\(name).png"))
                     }

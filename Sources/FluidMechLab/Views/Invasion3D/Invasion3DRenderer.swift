@@ -560,6 +560,20 @@ final class Invasion3DSnapshotRegistry {
         return "t=\(s.time) h front=\(s.frontMean) in cake=\(s.cakeMean) mm massBalance=\(s.massBalanceError) solves=\(s.pressureSolves) sweeps=\(s.lastIterations) imbalance=\(s.lastImbalance) error=\(controller.errorMessage ?? lastError ?? "none")"
     }
 
+    /// For screenshots on slow (virtualised) GPUs: rebuilds the run on the preview grid with the same rock depth,
+    /// and advances it for up to `budget` seconds of wall time so the pictures show a developed invasion.
+    func fastForward(budget: Double) {
+        guard let controller, let setup = controller.setup else { return }
+        var options = setup.options
+        options.resolution = .preview
+        options.domainDepth = (setup.domainRadius - setup.wellboreRadius) / 0.0254
+        controller.configure(Invasion3DSetup(setup.mud, options: options))
+        guard let renderer = controller.renderer, let solver = renderer.solver else { return }
+        solver.advance(by: solver.setup.exposureTime, budget: budget)
+        solver.waitUntilIdle()
+        controller.receive(stats: solver.stats, finished: solver.isFinished, record: true)
+    }
+
     func snapshots() -> [(String, CGImage)] {
         guard let view, let controller, let renderer = controller.renderer else { return [] }
         let original = (controller.mode, controller.field)
