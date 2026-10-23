@@ -86,6 +86,10 @@ The Live Flow screen solves the same physics as the 1D damage model, on a horizo
 
 The live model is for insight. The 1D model remains the quantitative reference, and the live view draws its filtrate front as a dashed ring for comparison.
 
+## 3D invasion model
+
+The research-grade 3D model (cylindrical grid, layered anisotropic rock, second-order transport, verification and calibration) is documented separately in [INVASION3D.md](INVASION3D.md).
+
 ### References
 
 - Bedrikovetsky, P. et al. (2001). Characterisation of deep bed filtration system from laboratory pressure drop measurements. *J. Pet. Sci. Eng.* 32, 167–177.

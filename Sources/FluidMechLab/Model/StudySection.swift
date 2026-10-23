@@ -7,6 +7,7 @@ enum StudySection: String, CaseIterable, Identifiable, Hashable {
     case fluid
     case damage
     case liveFlow
+    case invasion3D
     case nodal
     case sensitivity
 
@@ -19,6 +20,7 @@ enum StudySection: String, CaseIterable, Identifiable, Hashable {
         case .fluid: "Fluid & PVT"
         case .damage: "Formation Damage"
         case .liveFlow: "Live Flow"
+        case .invasion3D: "3D Invasion"
         case .nodal: "Nodal Analysis"
         case .sensitivity: "Sensitivity Study"
         }
@@ -31,6 +33,7 @@ enum StudySection: String, CaseIterable, Identifiable, Hashable {
         case .fluid: "drop.halffull"
         case .damage: "circle.dashed.inset.filled"
         case .liveFlow: "play.circle"
+        case .invasion3D: "view.3d"
         case .nodal: "chart.xyaxis.line"
         case .sensitivity: "slider.horizontal.3"
         }
@@ -43,6 +46,7 @@ enum StudySection: String, CaseIterable, Identifiable, Hashable {
         case .fluid: "Black-oil correlations"
         case .damage: "Mud filtrate and fines invasion near the wellbore"
         case .liveFlow: "Real-time GPU simulation of invasion around the borehole"
+        case .invasion3D: "3D near-wellbore invasion in layered rock, with verification and lab calibration"
         case .nodal: "Reservoir inflow against tubing outflow"
         case .sensitivity: "How damage and rate respond to one parameter"
         }
@@ -54,5 +58,5 @@ enum StudySection: String, CaseIterable, Identifiable, Hashable {
     }
 
     static let modelSections: [StudySection] = [.architecture, .model3D, .fluid]
-    static let simulationSections: [StudySection] = [.damage, .liveFlow, .nodal, .sensitivity]
+    static let simulationSections: [StudySection] = [.damage, .liveFlow, .invasion3D, .nodal, .sensitivity]
 }

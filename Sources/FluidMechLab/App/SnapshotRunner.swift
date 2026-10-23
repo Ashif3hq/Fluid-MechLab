@@ -35,7 +35,7 @@ enum SnapshotRunner {
             for (i, section) in StudySection.allCases.enumerated() {
                 // Select through the sidebar like a click, so a broken sidebar shows up in the log.
                 if !selectInSidebar(section, window: window) { select(section) }
-                await pause(section == .sensitivity ? 5 : (section == .liveFlow ? 9 : 3))
+                await pause(section == .sensitivity ? 5 : (section == .liveFlow ? 9 : (section == .invasion3D ? 16 : 3)))
                 if !window.subtitle.hasPrefix(section.title) {
                     log(dir, "sidebar selection of \(section.title) did not switch the pane (subtitle: \(window.subtitle))")
                 }
@@ -45,6 +45,13 @@ enum SnapshotRunner {
                         write(NSImage(cgImage: image, size: .zero), to: dir.appendingPathComponent("\(appearanceName)-\(i + 1)-\(section.rawValue)-gpu.png"))
                     }
                     log(dir, "live flow: device=\(MTLCreateSystemDefaultDevice()?.name ?? "none") error=\(LiveFlowSnapshotRegistry.shared.lastError ?? "none")")
+                }
+                if section == .invasion3D {
+                    Invasion3DSnapshotRegistry.shared.fastForward(budget: 35)
+                    for (name, image) in Invasion3DSnapshotRegistry.shared.snapshots() {
+                        write(NSImage(cgImage: image, size: .zero), to: dir.appendingPathComponent("\(appearanceName)-\(i + 1)-\(section.rawValue)-\(name).png"))
+                    }
+                    log(dir, "3D invasion: \(Invasion3DSnapshotRegistry.shared.summary)")
                 }
                 if section == .model3D, let image = Well3DSnapshotRegistry.shared.view?.snapshot() {
                     write(image, to: dir.appendingPathComponent("\(appearanceName)-\(i + 1)-\(section.rawValue)-scene.png"))

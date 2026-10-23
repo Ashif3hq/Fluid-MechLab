@@ -17,6 +17,10 @@ struct InspectorView: View {
             case .damage, .liveFlow, .sensitivity:
                 DrillingInspector(study: $study)
                 RockInspector(study: $study)
+            case .invasion3D:
+                Invasion3DInspector(options: $study.invasionOptions)
+                DrillingInspector(study: $study)
+                RockInspector(study: $study)
             case .nodal:
                 ReservoirInspector(study: $study)
                 ProductionInspector(study: $study)

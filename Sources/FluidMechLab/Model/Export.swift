@@ -25,7 +25,7 @@ enum ResultExporter {
                 rows.append([n(Quantity.pressure.display(p.pressure, in: units), 1), n(Quantity.gasOilRatio.display(p.rs, in: units), 2),
                              n(p.bo), n(p.oilViscosity), n(Quantity.density.display(p.oilDensity, in: units), 3), n(p.z), n(p.gasViscosity, 5)])
             }
-        case .damage, .liveFlow, .sensitivity:
+        case .damage, .liveFlow, .invasion3D, .sensitivity:
             guard let d = sim.damage else { break }
             rows.append([h("Depth into formation", .invasionDepth), h("Radius", .depth), "k/k0", "Retained fines sigma", "Suspended fines c", "Filtrate invaded"])
             for p in d.profile {
