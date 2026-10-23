@@ -115,15 +115,21 @@ final class Invasion3DTests: XCTestCase {
         let layers: [Float] = [0.3, 3, 0.3, 3, 0.3, 3]
         for a in field.indices { field[a] = layers[a / (24 * 8)] }
         var options = smallOptions()
+        options.domainDepth = 8
         options.anisotropy = 0.05
         // A thin, leaky cake, so the rock and not the cake sets the rate in each layer.
         c.cakePermeability = 5
         let setup = Invasion3DSetup(c, options: options, sizeOverride: dims, permeabilityField: field)
         let solver = Invasion3DSolver(setup: setup)
-        solver.advance(by: setup.exposureTime)
         func depth(_ k: Int) -> Double {
             Invasion3DMetrics.frontRadius(setup: setup, j: 0, k: k) { solver.saturation[$0] } - setup.wellboreRadius
         }
+        // Stop while the fast layers' front is still inside the model, so neither front is clipped by the outer edge.
+        let room = setup.domainRadius - setup.wellboreRadius
+        while depth(1) < 0.45 * room && solver.time < setup.exposureTime * (1 - 1e-12) {
+            solver.advance(by: setup.exposureTime / 400)
+        }
+        XCTAssertLessThan(depth(1), 0.8 * room, "front reached the edge of the model")
         XCTAssertGreaterThan(depth(1), depth(0) * 1.3)
         XCTAssertGreaterThan(depth(3), depth(2) * 1.3)
         XCTAssertGreaterThan(solver.stats.frontSpread, 0)

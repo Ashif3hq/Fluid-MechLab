@@ -15,7 +15,8 @@ jobs:
       - name: Build app and engine
         run: swift build -c release
       - name: Run physics tests
-        run: swift test
+        # Release build: the 3D solver tests run 10-50x faster than in debug.
+        run: swift test -c release -Xswiftc -enable-testing
 
   app-and-screenshots:
     runs-on: macos-15
