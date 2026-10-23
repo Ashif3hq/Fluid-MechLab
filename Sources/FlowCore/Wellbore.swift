@@ -1,11 +1,15 @@
 import Foundation
 
-/// Production tubing and well trajectory (single constant-angle section).
+/// Hydraulic description of the flow path used by the outflow model: tubing plus a build-and-hold trajectory.
 public struct Well: Equatable, Codable, Sendable {
     /// Measured depth from wellhead to mid-perforation, ft.
     public var measuredDepth: Double
-    /// Deviation from vertical, degrees (0 = vertical well).
+    /// Hold (tangent) inclination from vertical, degrees (0 = vertical well).
     public var deviation: Double
+    /// Kick-off point, ft MD.
+    public var kickoffDepth: Double
+    /// Build rate, degrees per 100 ft.
+    public var buildRate: Double
     /// Tubing inner diameter, inches.
     public var tubingID: Double
     /// Absolute pipe roughness, inches.
@@ -18,6 +22,8 @@ public struct Well: Equatable, Codable, Sendable {
     public init(
         measuredDepth: Double = 8000,
         deviation: Double = 0,
+        kickoffDepth: Double = 0,
+        buildRate: Double = 2,
         tubingID: Double = 2.992,
         roughness: Double = 0.0006,
         wellheadPressure: Double = 250,
@@ -25,13 +31,25 @@ public struct Well: Equatable, Codable, Sendable {
     ) {
         self.measuredDepth = measuredDepth
         self.deviation = deviation
+        self.kickoffDepth = kickoffDepth
+        self.buildRate = buildRate
         self.tubingID = tubingID
         self.roughness = roughness
         self.wellheadPressure = wellheadPressure
         self.wellheadTemperature = wellheadTemperature
     }
 
-    public var trueVerticalDepth: Double { measuredDepth * cos(deviation * .pi / 180) }
+    var trajectory: WellTrajectory {
+        WellTrajectory(kickoffDepth: kickoffDepth, buildRate: buildRate, holdInclination: deviation, azimuth: 0)
+    }
+
+    /// Inclination from vertical at a measured depth, degrees.
+    public func inclination(atMD md: Double) -> Double { trajectory.inclination(atMD: md) }
+
+    /// True vertical depth at a measured depth, ft.
+    public func trueVerticalDepth(atMD md: Double) -> Double { trajectory.position(atMD: md).tvd }
+
+    public var trueVerticalDepth: Double { trueVerticalDepth(atMD: measuredDepth) }
 }
 
 /// Surface production rates and ratios.
@@ -78,8 +96,10 @@ public struct WellboreFlowModel: Sendable {
         self.reservoirTemperature = reservoirTemperature
     }
 
+    /// Linear geothermal profile in true vertical depth between wellhead and perforations.
     func temperature(atDepth md: Double) -> Double {
-        let f = well.measuredDepth > 0 ? md / well.measuredDepth : 0
+        let total = well.trueVerticalDepth
+        let f = total > 0 ? well.trueVerticalDepth(atMD: md) / total : 0
         return well.wellheadTemperature + f * (reservoirTemperature - well.wellheadTemperature)
     }
 
@@ -121,7 +141,7 @@ public struct WellboreFlowModel: Sendable {
     private func gradient(pressure p: Double, depth md: Double, rates: ProductionRates) -> GradientResult {
         let t = temperature(atDepth: md)
         let state = flowState(pressure: max(p, 14.7), temperature: t, rates: rates)
-        let theta = (90 - well.deviation) * .pi / 180
+        let theta = (90 - well.inclination(atMD: md)) * .pi / 180
         return BeggsBrill.gradient(
             state, diameter: well.tubingID / 12, roughness: well.roughness / 12, inclination: theta)
     }

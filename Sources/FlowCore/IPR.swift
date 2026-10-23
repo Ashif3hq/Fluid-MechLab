@@ -10,6 +10,8 @@ public struct Reservoir: Equatable, Codable, Sendable {
     public var permeability: Double
     /// Net pay thickness, ft.
     public var thickness: Double
+    /// Porosity, fraction.
+    public var porosity: Double
     /// Drainage radius, ft.
     public var drainageRadius: Double
     /// Wellbore radius, ft.
@@ -22,6 +24,7 @@ public struct Reservoir: Equatable, Codable, Sendable {
         temperature: Double = 200,
         permeability: Double = 50,
         thickness: Double = 60,
+        porosity: Double = 0.2,
         drainageRadius: Double = 1500,
         wellboreRadius: Double = 0.354,
         skin: Double = 0
@@ -30,6 +33,7 @@ public struct Reservoir: Equatable, Codable, Sendable {
         self.temperature = temperature
         self.permeability = permeability
         self.thickness = thickness
+        self.porosity = porosity
         self.drainageRadius = drainageRadius
         self.wellboreRadius = wellboreRadius
         self.skin = skin

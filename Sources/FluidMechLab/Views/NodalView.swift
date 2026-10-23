@@ -3,132 +3,211 @@ import FlowCore
 import SwiftUI
 
 struct NodalView: View {
-    @Environment(AppState.self) private var state
+    let study: StudyCase
+    @Environment(SimulationModel.self) private var sim
 
     var body: some View {
-        @Bindable var state = state
-        HStack(spacing: 0) {
-            Form {
-                Section("Reservoir") {
-                    ParameterRow(title: "Pressure", value: $state.nodalCase.reservoir.pressure, range: 1000...10000, unit: "psia", digits: 0)
-                    ParameterRow(title: "Temperature", value: $state.nodalCase.reservoir.temperature, range: 100...350, unit: "°F", digits: 0)
-                    ParameterRow(title: "Permeability", value: $state.nodalCase.reservoir.permeability, range: 0.1...2000, unit: "md", digits: 1, logarithmic: true)
-                    ParameterRow(title: "Net pay", value: $state.nodalCase.reservoir.thickness, range: 5...300, unit: "ft", digits: 0)
-                    ParameterRow(title: "Skin", value: $state.nodalCase.reservoir.skin, range: -4...40, unit: "", digits: 2)
-                    ParameterRow(title: "Drainage radius", value: $state.nodalCase.reservoir.drainageRadius, range: 200...5000, unit: "ft", digits: 0)
-                }
-                Section("Fluid") {
-                    ParameterRow(title: "Oil gravity", value: $state.nodalCase.fluid.apiGravity, range: 10...55, unit: "°API", digits: 1)
-                    ParameterRow(title: "Gas gravity", value: $state.nodalCase.fluid.gasGravity, range: 0.55...1.3, unit: "air = 1", digits: 2)
-                    ParameterRow(title: "Solution GOR", value: $state.nodalCase.fluid.solutionGOR, range: 50...2500, unit: "scf/STB", digits: 0)
-                    ParameterRow(title: "Producing GOR", value: $state.nodalCase.producingGOR, range: 50...5000, unit: "scf/STB", digits: 0)
-                    ParameterRow(title: "Water cut", value: $state.nodalCase.waterCut, range: 0...0.98, unit: "fraction", digits: 2)
-                }
-                Section("Well") {
-                    ParameterRow(title: "Measured depth", value: $state.nodalCase.well.measuredDepth, range: 1000...20000, unit: "ft", digits: 0)
-                    ParameterRow(title: "Deviation", value: $state.nodalCase.well.deviation, range: 0...80, unit: "°", digits: 0)
-                    ParameterRow(title: "Tubing ID", value: $state.nodalCase.well.tubingID, range: 1.5...6.5, unit: "in", digits: 3)
-                    ParameterRow(title: "Wellhead pressure", value: $state.nodalCase.well.wellheadPressure, range: 50...3000, unit: "psia", digits: 0)
-                    ParameterRow(title: "Wellhead temp.", value: $state.nodalCase.well.wellheadTemperature, range: 40...250, unit: "°F", digits: 0)
-                }
-                Section {
-                    Button("Reset to example well") { state.nodalCase = NodalCase() }
-                }
-            }
-            .formStyle(.grouped)
-            .frame(width: 380)
-
-            Divider()
-
-            ScrollView {
-                if let result = state.nodalResult {
-                    NodalResults(result: result)
-                        .padding(20)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                PaneHeader(section: .nodal, trailing: sim.isRunning ? "Solving…" : nil)
+                if let result = sim.nodal {
+                    NodalResults(study: study, result: result, damageSkin: sim.damage?.skin, reference: sim.nodalReference)
                 } else {
-                    ProgressView().padding(40)
+                    ProgressView("Solving nodal analysis…")
+                        .frame(maxWidth: .infinity, minHeight: 300)
                 }
             }
-            .frame(maxWidth: .infinity)
-        }
-        .task(id: state.nodalCase) {
-            try? await Task.sleep(for: .milliseconds(120))
-            guard !Task.isCancelled else { return }
-            await state.recomputeNodal()
+            .padding(20)
         }
     }
 }
 
 private struct NodalResults: View {
+    let study: StudyCase
     let result: NodalResult
+    let damageSkin: Double?
+    let reference: ReferenceRun<NodalResult>?
+
+    @Environment(\.unitSystem) private var units
+
+    private var totalSkin: Double {
+        study.reservoir.skin + (study.includeDamageSkin ? (damageSkin ?? 0) : 0)
+    }
+
+    /// Keeps the operating point in view: the VLP climbs steeply towards the AOF and would flatten everything else.
+    private var rateAxisMax: Double {
+        let aof = result.absoluteOpenFlow
+        guard let rate = result.operatingPoint?.rate else { return aof }
+        return min(aof, max(rate * 2.5, aof * 0.2))
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 12) {
+            StatGrid {
                 if let op = result.operatingPoint {
-                    StatTile(title: "Operating rate", value: "\(op.rate.formatted(digits: 0)) STB/d", detail: "liquid at stock-tank conditions")
-                    StatTile(title: "Flowing BHP", value: "\(op.pressure.formatted(digits: 0)) psia", detail: "at mid-perforations")
+                    StatTile(title: "Operating rate", value: Quantity.liquidRate.format(op.rate, digits: 0, in: units),
+                             detail: referenceDetail ?? "liquid at stock-tank conditions", systemImage: "drop.fill", tint: .blue)
+                    StatTile(title: "Flowing bottomhole pressure", value: Quantity.pressure.format(op.pressure, digits: 0, in: units),
+                             detail: "at mid-perforations", systemImage: "gauge.with.dots.needle.50percent")
+                    StatTile(title: "Oil rate", value: Quantity.liquidRate.format(op.rate * (1 - study.waterCut), digits: 0, in: units),
+                             detail: "water cut \((study.waterCut * 100).formatted(digits: 0)) %", systemImage: "flame")
                 } else {
-                    StatTile(title: "Operating point", value: "No natural flow", detail: "tubing needs more pressure than the reservoir delivers; consider artificial lift", tint: .orange)
+                    StatTile(title: "Operating point", value: "No natural flow",
+                             detail: "the tubing needs more pressure than the reservoir can deliver; consider artificial lift",
+                             systemImage: "exclamationmark.triangle.fill", tint: .orange)
                 }
-                StatTile(title: "Productivity index", value: "\(result.productivityIndex.formatted(digits: 2))", detail: "STB/d/psi above bubble point")
-                StatTile(title: "AOF", value: "\(result.absoluteOpenFlow.formatted(digits: 0)) STB/d", detail: "absolute open flow")
-                StatTile(title: "Bubble point", value: "\(result.bubblePoint.formatted(digits: 0)) psia", detail: "Standing correlation")
+                StatTile(title: "Total skin", value: totalSkin.formatted(digits: 2),
+                         detail: skinBreakdown, systemImage: "circle.dashed.inset.filled", tint: totalSkin > 2 ? .red : .orange)
+                StatTile(title: "Productivity index", value: Quantity.productivityIndex.format(result.productivityIndex, digits: 2, in: units),
+                         detail: "above the bubble point", systemImage: "arrow.up.right")
+                StatTile(title: "Absolute open flow", value: Quantity.liquidRate.format(result.absoluteOpenFlow, digits: 0, in: units),
+                         detail: "rate at zero bottomhole pressure", systemImage: "arrow.up.to.line")
+            }
+
+            if let reference {
+                ReferenceBadge(label: reference.label)
             }
 
             ChartCard(title: "Nodal analysis", subtitle: "Inflow performance (Darcy + Vogel) against tubing outflow (Beggs-Brill)") {
-                Chart {
-                    ForEach(result.ipr) { p in
-                        LineMark(x: .value("Liquid rate", p.rate), y: .value("Pressure", p.pressure), series: .value("Curve", "IPR"))
-                            .foregroundStyle(by: .value("Curve", "Inflow (IPR)"))
-                    }
-                    ForEach(result.vlp) { p in
-                        LineMark(x: .value("Liquid rate", p.rate), y: .value("Pressure", p.pressure), series: .value("Curve", "VLP"))
-                            .foregroundStyle(by: .value("Curve", "Outflow (VLP)"))
-                    }
-                    if let op = result.operatingPoint {
-                        PointMark(x: .value("Liquid rate", op.rate), y: .value("Pressure", op.pressure))
-                            .symbolSize(140)
-                            .foregroundStyle(.red)
-                            .annotation(position: .topTrailing) {
-                                Text("\(op.rate.formatted(digits: 0)) STB/d @ \(op.pressure.formatted(digits: 0)) psia")
-                                    .font(.caption.bold())
-                                    .padding(4)
-                                    .background(.background, in: RoundedRectangle(cornerRadius: 4))
-                            }
-                    }
-                    RuleMark(y: .value("Bubble point", result.bubblePoint))
-                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
-                        .foregroundStyle(.secondary)
-                }
-                .chartXAxisLabel("Liquid rate (STB/d)")
-                .chartYAxisLabel("Bottomhole pressure (psia)")
-                .frame(height: 320)
+                NodalChart(
+                    ipr: points(result.ipr), vlp: points(result.vlp),
+                    referenceIPR: reference.map { points($0.result.ipr) } ?? [],
+                    referenceVLP: reference.map { points($0.result.vlp) } ?? [],
+                    operating: result.operatingPoint.map { XY(id: 0, x: Quantity.liquidRate.display($0.rate, in: units), y: Quantity.pressure.display($0.pressure, in: units)) },
+                    operatingLabel: result.operatingPoint.map {
+                        "\(Quantity.liquidRate.format($0.rate, digits: 0, in: units)) at \(Quantity.pressure.format($0.pressure, digits: 0, in: units))"
+                    } ?? "",
+                    bubblePoint: Quantity.pressure.display(result.bubblePoint, in: units),
+                    xLabel: Quantity.liquidRate.axisLabel("Liquid rate", in: units),
+                    yLabel: Quantity.pressure.axisLabel("Bottomhole pressure", in: units),
+                    xMax: Quantity.liquidRate.display(rateAxisMax, in: units),
+                    yMax: Quantity.pressure.display(study.reservoir.pressure * 1.15, in: units))
+                    .frame(height: 340)
             }
 
             HStack(alignment: .top, spacing: 16) {
-                ChartCard(title: "Pressure traverse", subtitle: "Along the tubing at the operating rate, coloured by flow pattern") {
+                ChartCard(title: "Pressure traverse", subtitle: "Up the tubing at the operating rate, coloured by flow pattern") {
                     Chart(result.traverse) { p in
-                        PointMark(x: .value("Pressure", p.pressure), y: .value("Depth", p.depth))
-                            .symbolSize(14)
+                        PointMark(x: .value("Pressure", Quantity.pressure.display(p.pressure, in: units)),
+                                  y: .value("Depth", Quantity.depth.display(p.depth, in: units)))
+                            .symbolSize(16)
                             .foregroundStyle(by: .value("Pattern", p.pattern.rawValue))
                     }
                     .chartYScale(domain: .automatic(includesZero: true, reversed: true))
-                    .chartXAxisLabel("Pressure (psia)")
-                    .chartYAxisLabel("Measured depth (ft)")
+                    .chartXAxisLabel(Quantity.pressure.axisLabel("Pressure", in: units))
+                    .chartYAxisLabel(Quantity.depth.axisLabel("Measured depth", in: units))
                     .frame(height: 300)
                 }
-                ChartCard(title: "Liquid holdup", subtitle: "Fraction of tubing area filled with liquid (slip vs. no-slip)") {
+                ChartCard(title: "Liquid holdup", subtitle: "Fraction of the tubing filled with liquid") {
                     Chart(result.traverse) { p in
-                        LineMark(x: .value("Holdup", p.holdup), y: .value("Depth", p.depth))
-                            .foregroundStyle(.blue)
+                        LineMark(x: .value("Holdup", p.holdup), y: .value("Depth", Quantity.depth.display(p.depth, in: units)))
+                            .foregroundStyle(.teal)
                     }
                     .chartXScale(domain: 0...1)
                     .chartYScale(domain: .automatic(includesZero: true, reversed: true))
                     .chartXAxisLabel("Liquid holdup")
-                    .chartYAxisLabel("Measured depth (ft)")
+                    .chartYAxisLabel(Quantity.depth.axisLabel("Measured depth", in: units))
+                    .frame(height: 300)
+                }
+                ChartCard(title: "Gradient split", subtitle: "Hydrostatic and friction share of the pressure gradient") {
+                    Chart {
+                        ForEach(result.traverse) { p in
+                            AreaMark(x: .value("Depth", Quantity.depth.display(p.depth, in: units)), y: .value("psi/ft", p.elevationGradient))
+                                .foregroundStyle(by: .value("Term", "Hydrostatic"))
+                            AreaMark(x: .value("Depth", Quantity.depth.display(p.depth, in: units)), y: .value("psi/ft", p.frictionGradient))
+                                .foregroundStyle(by: .value("Term", "Friction"))
+                        }
+                    }
+                    .chartXAxisLabel(Quantity.depth.axisLabel("Measured depth", in: units))
+                    .chartYAxisLabel("Gradient (psi/ft)")
                     .frame(height: 300)
                 }
             }
         }
+    }
+
+    private func points(_ curve: [CurvePoint]) -> [XY] {
+        curve.enumerated().map { i, p in
+            XY(id: i, x: Quantity.liquidRate.display(p.rate, in: units), y: Quantity.pressure.display(p.pressure, in: units))
+        }
+    }
+
+    private var skinBreakdown: String {
+        let damage = study.includeDamageSkin ? (damageSkin ?? 0) : 0
+        return "completion \(study.reservoir.skin.formatted(digits: 2)) + mud damage \(damage.formatted(digits: 2))"
+    }
+
+    private var referenceDetail: String? {
+        guard let reference, let rate = reference.result.operatingPoint?.rate else { return nil }
+        return "reference \(Quantity.liquidRate.format(rate, digits: 0, in: units))"
+    }
+}
+
+/// A display-unit chart point.
+struct XY: Identifiable {
+    let id: Int
+    let x: Double
+    let y: Double
+}
+
+/// IPR/VLP chart with optional dashed reference curves and the operating point.
+private struct NodalChart: View {
+    let ipr: [XY]
+    let vlp: [XY]
+    let referenceIPR: [XY]
+    let referenceVLP: [XY]
+    let operating: XY?
+    let operatingLabel: String
+    let bubblePoint: Double
+    let xLabel: String
+    let yLabel: String
+    let xMax: Double
+    let yMax: Double
+
+    var body: some View {
+        Chart {
+            ForEach(ipr) { p in
+                LineMark(x: .value("Rate", p.x), y: .value("Pressure", p.y), series: .value("Curve", "IPR"))
+                    .foregroundStyle(by: .value("Curve", "Inflow (IPR)"))
+            }
+            ForEach(vlp) { p in
+                LineMark(x: .value("Rate", p.x), y: .value("Pressure", p.y), series: .value("Curve", "VLP"))
+                    .foregroundStyle(by: .value("Curve", "Outflow (VLP)"))
+            }
+            ForEach(referenceIPR) { p in
+                LineMark(x: .value("Rate", p.x), y: .value("Pressure", p.y), series: .value("Curve", "IPR reference"))
+                    .foregroundStyle(by: .value("Curve", "Reference"))
+                    .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
+            }
+            ForEach(referenceVLP) { p in
+                LineMark(x: .value("Rate", p.x), y: .value("Pressure", p.y), series: .value("Curve", "VLP reference"))
+                    .foregroundStyle(by: .value("Curve", "Reference"))
+                    .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
+            }
+            if let operating {
+                PointMark(x: .value("Rate", operating.x), y: .value("Pressure", operating.y))
+                    .symbolSize(150)
+                    .foregroundStyle(.red)
+                    .annotation(position: .topTrailing, spacing: 6) {
+                        Text(operatingLabel)
+                            .font(.caption.bold())
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 5))
+                    }
+            }
+            RuleMark(y: .value("Bubble point", bubblePoint))
+                .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                .foregroundStyle(.secondary)
+                .annotation(position: .top, alignment: .leading) {
+                    Text("Bubble point").font(.caption2).foregroundStyle(.secondary)
+                }
+        }
+        .chartForegroundStyleScale(["Inflow (IPR)": Color.green, "Outflow (VLP)": Color.blue, "Reference": Color.gray])
+        .chartXScale(domain: 0...max(xMax, 1))
+        .chartYScale(domain: 0...max(yMax, 1))
+        .chartPlotStyle { $0.clipped() }
+        .chartXAxisLabel(xLabel)
+        .chartYAxisLabel(yLabel)
     }
 }
